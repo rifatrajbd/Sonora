@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +8,15 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+
+// Release signing secrets, loaded from an untracked secrets.properties (or env vars in CI).
+// When absent — e.g. a fresh clone with no keystore — the release build falls back to the
+// debug key so the project still compiles for everyone.
+val secretsFile = rootProject.file("secrets.properties")
+val secrets = Properties().apply { if (secretsFile.exists()) secretsFile.inputStream().use { load(it) } }
+fun secret(key: String): String? = secrets.getProperty(key) ?: System.getenv(key)
+val releaseKeystore = secret("RELEASE_KEYSTORE_FILE")?.let { rootProject.file(it) }
+val hasReleaseSigning = releaseKeystore?.exists() == true
 
 android {
     namespace = "com.sonora.music"
@@ -29,15 +40,28 @@ android {
         buildConfigField("String", "JIOSAAVN_BASE_URL", "\"$jiosaavnBase\"")
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = secret("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias = secret("RELEASE_KEY_ALIAS")
+                keyPassword = secret("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // Preview releases are signed with the debug key so the APK is installable straight
-            // from GitHub Releases (Sonora is side-loaded, not on Play Store). Swap in a real
-            // upload keystore before a proper 1.0. Minify is off for now to avoid R8 stripping
-            // NewPipeExtractor's reflection until the shrink rules are fully verified.
+            // Signed with the real upload keystore when secrets.properties is present; otherwise
+            // falls back to the debug key so a keystore-less clone still builds. Minify is off for
+            // now to avoid R8 stripping NewPipeExtractor's reflection until shrink rules are verified.
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseSigning)
+                signingConfigs.getByName("release")
+            else
+                signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {
