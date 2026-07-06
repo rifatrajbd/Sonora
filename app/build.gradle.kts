@@ -31,8 +31,13 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // Preview releases are signed with the debug key so the APK is installable straight
+            // from GitHub Releases (Sonora is side-loaded, not on Play Store). Swap in a real
+            // upload keystore before a proper 1.0. Minify is off for now to avoid R8 stripping
+            // NewPipeExtractor's reflection until the shrink rules are fully verified.
+            isMinifyEnabled = false
+            isShrinkResources = false
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
         debug {

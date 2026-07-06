@@ -1,85 +1,102 @@
-# Sonora 🎵
+<div align="center">
 
-A multi-source, Material 3 **Expressive** music player for Android — inspired by
-[InnerTune](https://github.com/z-huang/InnerTune), but not tied to a single backend.
+# 🎵 Sonora
 
-Sonora streams from **five private/trick-based sources** behind one pluggable interface, with
-automatic failover so playback never dies when an upstream API changes.
+### A multi-source, Material 3 **Expressive** music player for Android
 
-## Sources
+Search once, play from the best available source — with automatic fallback so the music never stops.
 
-| Source | How it's accessed | Quality |
-|--------|-------------------|---------|
-| **YouTube Music** | NewPipeExtractor (InnerTube client-spoof + PoToken, ReVanced-style) | ~256 kbps |
-| **Qobuz** | self-hosted **squid.wtf** backend | 24-bit/192 kHz FLAC |
-| **Tidal** | self-hosted **squid.wtf** backend | 24-bit/192 kHz FLAC |
-| **Amazon Music** | self-hosted **squid.wtf** backend | FLAC |
-| **Apple Music** | anonymous web-token method | 256 kbps AAC |
-| **JioSaavn** *(fallback)* | unofficial JioSaavn API | 320 kbps, DRM-free |
+Inspired by [InnerTune](https://github.com/z-huang/InnerTune), built from scratch with a pluggable, provider-agnostic core.
 
-## Tech stack
+![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white)
+![Min SDK](https://img.shields.io/badge/min%20SDK-26-blue)
+![Language](https://img.shields.io/badge/Kotlin-100%25-7F52FF?logo=kotlin&logoColor=white)
+![UI](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
+[![Release](https://img.shields.io/github/v/release/rifatrajbd/Sonora?include_prereleases&color=FF7A59)](https://github.com/rifatrajbd/Sonora/releases/latest)
+[![Download](https://img.shields.io/github/downloads/rifatrajbd/Sonora/total?color=FF7A59)](https://github.com/rifatrajbd/Sonora/releases)
 
-- **Kotlin + Jetpack Compose + Material 3 Expressive** (dynamic album-art color, AMOLED dark)
-- **Media3 / ExoPlayer** — gapless background playback via `PlaybackService`
-- **Room** — library (liked songs, playlists, downloads)
-- **Hilt** — DI; the 5 sources are multibound into `SourceResolver`
-- **Retrofit / OkHttp / kotlinx.serialization** — networking
-- **Coil** — artwork
+</div>
 
-## Architecture
+---
+
+## ✨ Features
+
+- 🔀 **Multiple providers, one app** — a pluggable source layer you configure yourself
+- 🎧 **Unified search** across every configured provider, merged and de-duplicated
+- 🛟 **Automatic fallback** — if one provider can't stream a track, Sonora silently uses another
+- 🏷️ **Quality chips** — see **HiFi · Hi-Res · HD** at a glance, Spotify-style
+- ▶️ **Gapless background playback** (Media3/ExoPlayer) with a real queue, next/prev & auto-advance
+- 🔒 **Lock-screen & notification controls**, Bluetooth / Android Auto ready
+- ❤️ **Library** — liked songs, playlists, downloads
+- 🎨 **Material 3 Expressive UI** — dynamic album-art color, AMOLED-black theme, glass Now Playing
+- 🔧 **Remote config** — providers are hot-swappable from a hosted JSON, **no app update needed**
+- 🚫 **No ads**
+
+> **Coming next:** synced lyrics, offline downloads, home feed, discovery.
+
+---
+
+## 📥 Download
+
+Grab the latest APK from the [**Releases**](https://github.com/rifatrajbd/Sonora/releases/latest) page and side-load it.
+
+> Providers are **not** bundled or configured out of the box — Sonora ships as a player shell.
+> You supply your own provider endpoints via `config.json` / `local.properties`.
+
+---
+
+## 🧱 Tech stack
+
+| Layer | Choice |
+|-------|--------|
+| Language / UI | Kotlin · Jetpack Compose · Material 3 Expressive |
+| Playback | Media3 / ExoPlayer |
+| Storage | Room |
+| DI | Hilt |
+| Networking | Retrofit · OkHttp · kotlinx.serialization |
+| Images | Coil |
+
+### Architecture
 
 ```
-UI (Compose)  ──►  MusicRepository  ──►  SourceResolver  ──►  [ 5x MusicSource ]
-                          │                    │ failover
-                          └► Room (library)    └► resolve stream URL on demand
-PlayerConnection ──► PlaybackService (Media3/ExoPlayer, OkHttp data source)
-RemoteConfigRepository ──► GitHub-hosted config.json (hot-swap sources, no APK update)
+UI (Compose) ─► MusicRepository ─► SourceResolver ─► [ pluggable MusicSource providers ]
+                     │                   │ failover
+                     └► Room (library)   └► resolve stream URL on demand
+PlayerConnection ─► PlaybackService (Media3/ExoPlayer)
+RemoteConfigRepository ─► hosted config.json  (hot-swap providers, no APK update)
 ```
 
-Every source implements `MusicSource` (`search`, `getStream`, `getLyrics`, `isHealthy`). Adding a
-source = one class + one line in `SourceModule`.
+Every provider implements one `MusicSource` interface (`search`, `getStream`, `getLyrics`, `isHealthy`).
+Adding a provider = one class + one line of DI. Provider implementations are configuration, not part
+of the published shell.
 
-## 🔧 Updating without shipping a new APK — the important part
+---
 
-Two layers keep Sonora alive as private APIs change:
+## 🔧 Build it yourself
 
-1. **Self-hosted proxy backends.** The fragile "trick" logic (Qobuz/Tidal/Amazon auth, JioSaavn,
-   Apple tokens) lives on servers **you** control (squid.wtf, a JioSaavn instance). When a trick
-   breaks, you patch the *server* — every install is fixed instantly, no reinstall.
+```bash
+git clone https://github.com/rifatrajbd/Sonora.git
+cd Sonora
+./gradlew :app:assembleDebug        # or open in Android Studio and Run
+```
 
-2. **Remote config (`config.json` on GitHub).** The app fetches this at launch. Change it to:
-   - flip `enabled: false` on a broken source,
-   - point a source at a new `baseUrl`,
-   - rotate `params` (client_id, app_id, tokens, region),
-   - re-order source `priority`,
-   - announce an update.
+Requires JDK 17+ (JDK 21 tested) and Android SDK 35. Configure your provider endpoints in
+`local.properties` or the hosted `config.json` — see [`config.sample.json`](config.sample.json).
 
-   Host it at e.g. `https://raw.githubusercontent.com/<you>/sonora-config/main/config.json` and set
-   `RemoteConfigRepository.CONFIG_URL`. See [`config.sample.json`](config.sample.json).
+---
 
-3. **When code *must* change** (e.g. a NewPipeExtractor bump, or a brand-new source): bump
-   `update.latest_version_code` in `config.json` and set `update.apk_url` to your new
-   **GitHub Release** APK. Sonora is side-loaded (not on Play Store), so an in-app updater reads
-   that and prompts users to download the new build. Set `mandatory: true` for hard-breaking changes.
+## ⚠️ Disclaimer
 
-## Build
+Sonora is a **player shell** for **personal, educational use**. It bundles no content and no
+provider credentials; how you configure and use it is your responsibility. Respect the terms of
+any service you connect it to.
 
-1. Open in **Android Studio** (Ladybug or newer). It will download the Gradle wrapper jar + SDK.
-2. Set your backends in `local.properties` (or the hosted `config.json`):
-   ```
-   SONORA_SQUID_BASE_URL=https://your-squidwtf.example.com/
-   SONORA_JIOSAAVN_BASE_URL=https://your-saavn.example.com/
-   ```
-3. Update `RemoteConfigRepository.CONFIG_URL` to your GitHub raw config URL.
-4. Run. Java 17+ required (Java 21 tested).
+Sonora is not affiliated with any streaming service or with InnerTune.
 
-## Legal
+---
 
-Sonora accesses several services through unofficial means for **personal use**. The lossless
-sources impersonate paid accounts and are against those services' ToS — this is why Sonora is not,
-and cannot be, distributed on Google Play. Host your own backends and respect the services you use.
+<div align="center">
 
-## Status
+Built with ☕ and Kotlin · Inspired by [InnerTune](https://github.com/z-huang/InnerTune)
 
-Early scaffold. MVP targets: multi-source search, playback, queue, library, offline downloads,
-synced lyrics. See the About screen in-app for full credits.
+</div>

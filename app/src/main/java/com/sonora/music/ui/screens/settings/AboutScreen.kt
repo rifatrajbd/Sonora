@@ -55,27 +55,34 @@ fun AboutScreen(onBack: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                "A multi-source Material 3 music player, inspired by InnerTune.",
+                "A multi-source Material 3 music player with a pluggable provider core.",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 8.dp),
             )
 
             Spacer(Modifier.height(24.dp))
-            SectionTitle("Sources")
-            Credit("YouTube Music", "via NewPipeExtractor (client-spoof + PoToken handling)")
-            Credit("Qobuz · Tidal · Amazon Music", "lossless FLAC via a self-hosted squid.wtf backend")
-            Credit("Apple Music", "catalog via the anonymous web-token method")
-            Credit("JioSaavn", "DRM-free audio via the unofficial JioSaavn API")
+            SectionTitle("Project")
+            Credit("Author", "rifatrajbd")
+            Credit("Source code", "github.com/rifatrajbd/Sonora")
+            Credit("License", "For personal & educational use")
+
+            Spacer(Modifier.height(16.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(16.dp))
+            SectionTitle("Providers")
+            Credit(
+                "Pluggable source layer",
+                "Providers are configured by the user and are not bundled with the app.",
+            )
 
             Spacer(Modifier.height(16.dp))
             HorizontalDivider()
             Spacer(Modifier.height(16.dp))
             SectionTitle("Built with")
-            Credit("NewPipeExtractor", "TeamNewPipe — GPLv3")
             Credit("Media3 / ExoPlayer", "Android Open Source Project")
             Credit("Jetpack Compose & Material 3", "Google")
+            Credit("Room · Hilt", "Android Jetpack")
             Credit("Coil", "image loading")
-            Credit("LrcLib & Kugou", "synchronised lyrics (v1)")
 
             Spacer(Modifier.height(16.dp))
             HorizontalDivider()
@@ -85,8 +92,8 @@ fun AboutScreen(onBack: () -> Unit) {
 
             Spacer(Modifier.height(24.dp))
             Text(
-                "Sonora accesses several services through unofficial means for personal use. " +
-                    "Respect the terms of the services you use.",
+                "Sonora is a player shell for personal, educational use. It bundles no content " +
+                    "or credentials. Respect the terms of any service you connect it to.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
