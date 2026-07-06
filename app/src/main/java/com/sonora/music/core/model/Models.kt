@@ -8,6 +8,7 @@ enum class SourceType(val displayName: String) {
     AMAZON_MUSIC("Amazon Music"),
     APPLE_MUSIC("Apple Music"),
     JIOSAAVN("JioSaavn"),
+    SPOTIFY("Spotify"),
     LOCAL("On device");
 }
 

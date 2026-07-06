@@ -16,7 +16,10 @@ import javax.inject.Inject
 @HiltViewModel
 class LyricsViewModel @Inject constructor(
     private val lrcLib: LrcLibService,
+    settings: com.sonora.music.data.settings.SettingsStore,
 ) : ViewModel() {
+
+    val lyricsPosition = settings.settings.value.lyricsPosition
 
     private val _state = MutableStateFlow<UiState<Lyrics>>(UiState.Loading)
     val state: StateFlow<UiState<Lyrics>> = _state.asStateFlow()

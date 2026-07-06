@@ -35,6 +35,7 @@ object SourceModule {
         youtube: YouTubeSource,
         apple: AppleMusicSource,
         jiosaavn: JioSaavnSource,
+        spotify: com.sonora.music.data.source.SpotifySource,
         local: com.sonora.music.data.source.LocalMusicSource,
     ): Set<@JvmSuppressWildcards MusicSource> = setOf(
         // Lossless trio on one self-hosted squid.wtf backend (off until configured)
@@ -45,6 +46,8 @@ object SourceModule {
         youtube,
         apple,
         jiosaavn,
+        // Spotify = metadata/home only; playback fails over to a real audio source
+        spotify,
         // On-device music (enabled via Settings)
         local,
     )

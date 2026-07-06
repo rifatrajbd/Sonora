@@ -51,6 +51,23 @@ object AppModule {
     @Provides @Singleton
     fun database(@ApplicationContext ctx: Context): SonoraDatabase = SonoraDatabase.build(ctx)
 
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    @Provides @Singleton
+    fun mediaCache(
+        @ApplicationContext ctx: Context,
+        settings: com.sonora.music.data.settings.SettingsStore,
+    ): androidx.media3.datasource.cache.SimpleCache {
+        val dir = java.io.File(ctx.cacheDir, "media")
+        val maxMb = settings.settings.value.maxCacheMb
+        val evictor = if (maxMb <= 0)
+            androidx.media3.datasource.cache.NoOpCacheEvictor()
+        else
+            androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor(maxMb * 1024L * 1024L)
+        return androidx.media3.datasource.cache.SimpleCache(
+            dir, evictor, androidx.media3.database.StandaloneDatabaseProvider(ctx),
+        )
+    }
+
     @Provides fun songDao(db: SonoraDatabase): SongDao = db.songDao()
     @Provides fun playlistDao(db: SonoraDatabase): PlaylistDao = db.playlistDao()
     @Provides fun historyDao(db: SonoraDatabase): com.sonora.music.data.db.HistoryDao = db.historyDao()

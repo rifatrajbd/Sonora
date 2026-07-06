@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.sonora.music.core.model.AudioQuality
 import com.sonora.music.core.model.SourceType
@@ -59,6 +60,9 @@ data class SonoraSettings(
     val localSyncEnabled: Boolean = false,
     val sourceEnabled: Map<SourceType, Boolean> = emptyMap(),
     val sourceBaseUrl: Map<SourceType, String> = emptyMap(),
+    // Onboarding & personalization
+    val onboardingDone: Boolean = false,
+    val favoriteGenres: Set<String> = emptySet(),
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("sonora_settings")
@@ -110,6 +114,8 @@ class SettingsStore @Inject constructor(
             localSyncEnabled = this[KEY_LOCAL_SYNC] ?: false,
             sourceEnabled = enabled,
             sourceBaseUrl = urls,
+            onboardingDone = this[KEY_ONBOARDING] ?: false,
+            favoriteGenres = this[KEY_GENRES] ?: emptySet(),
         )
     }
 
@@ -141,6 +147,10 @@ class SettingsStore @Inject constructor(
     fun setDisableScreenshot(v: Boolean) = set({ it[KEY_DISABLE_SS] = v }) { it.copy(disableScreenshot = v) }
     fun setLyricsProvider(v: LyricsProvider) = set({ it[KEY_LYRICS_PROVIDER] = v.name }) { it.copy(lyricsProvider = v) }
     fun setLocalSyncEnabled(v: Boolean) = set({ it[KEY_LOCAL_SYNC] = v }) { it.copy(localSyncEnabled = v) }
+    fun completeOnboarding(genres: Set<String>) = set({
+        it[KEY_ONBOARDING] = true; it[KEY_GENRES] = genres
+    }) { it.copy(onboardingDone = true, favoriteGenres = genres) }
+    fun setFavoriteGenres(genres: Set<String>) = set({ it[KEY_GENRES] = genres }) { it.copy(favoriteGenres = genres) }
     fun setSourceEnabled(t: SourceType, v: Boolean) = set({ it[booleanPreferencesKey("enabled_${t.name}")] = v }) {
         it.copy(sourceEnabled = it.sourceEnabled + (t to v))
     }
@@ -172,5 +182,7 @@ class SettingsStore @Inject constructor(
         private val KEY_DISABLE_SS = booleanPreferencesKey("disable_screenshot")
         private val KEY_LYRICS_PROVIDER = stringPreferencesKey("lyrics_provider")
         private val KEY_LOCAL_SYNC = booleanPreferencesKey("local_sync")
+        private val KEY_ONBOARDING = booleanPreferencesKey("onboarding_done")
+        private val KEY_GENRES = stringSetPreferencesKey("favorite_genres")
     }
 }

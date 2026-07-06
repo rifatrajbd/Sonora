@@ -74,6 +74,18 @@ class JioSaavnSource @Inject constructor(
         SearchResults(tracks = results)
     }
 
+    /** Look up a real artist portrait (name + image) via the artists endpoint. */
+    suspend fun searchArtistPick(query: String): Pair<String, String?>? = withContext(Dispatchers.IO) {
+        val body = get("$baseUrl/api/search/artists?query=${query.encode()}&limit=1") ?: return@withContext null
+        runCatching {
+            val results = json.parseToJsonElement(body).jsonObject["data"]?.jsonObject?.get("results")?.jsonArray
+            val a = results?.firstOrNull()?.jsonObject ?: return@runCatching null
+            val name = a["name"]?.jsonPrimitive?.content ?: return@runCatching null
+            val img = a["image"]?.jsonArray?.lastOrNull()?.jsonObject?.get("url")?.jsonPrimitive?.content
+            name to img
+        }.getOrNull()
+    }
+
     override suspend fun getHome(): List<com.sonora.music.core.model.HomeSection> {
         // Build a lightweight home feed from a few seed queries (works without a fragile
         // provider-specific "modules" schema). Swap for a real home endpoint later.

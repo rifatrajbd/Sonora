@@ -22,6 +22,7 @@ import javax.inject.Singleton
 @Singleton
 class SourceResolver @Inject constructor(
     private val sources: Set<@JvmSuppressWildcards MusicSource>,
+    private val settings: com.sonora.music.data.settings.SettingsStore,
 ) {
     private val active: List<MusicSource>
         get() = sources.filter { it.enabled }.sortedByDescending { it.priority }
@@ -36,8 +37,11 @@ class SourceResolver @Inject constructor(
             }
         }.awaitAll()
 
+        val hideExplicit = settings.settings.value.hideExplicit
         SearchResults(
-            tracks = results.flatMap { it.tracks }.dedupTracks(),
+            tracks = results.flatMap { it.tracks }
+                .let { if (hideExplicit) it.filterNot { t -> t.explicit } else it }
+                .dedupTracks(),
             albums = results.flatMap { it.albums },
             artists = results.flatMap { it.artists },
         )
@@ -93,6 +97,7 @@ class SourceResolver @Inject constructor(
             SourceType.YOUTUBE_MUSIC to 60, // widest catalog, lower quality
             SourceType.JIOSAAVN to 50,      // reliable DRM-free fallback
             SourceType.LOCAL to 40,
+            SourceType.SPOTIFY to 30,       // metadata/home only; playback fails over
         )
     }
 }

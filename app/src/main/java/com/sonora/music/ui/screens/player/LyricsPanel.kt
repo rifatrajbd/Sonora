@@ -51,7 +51,12 @@ fun LyricsPanel(
 }
 
 @Composable
-private fun LyricsList(lyrics: Lyrics, positionMs: Long, onSeek: (Long) -> Unit) {
+private fun LyricsList(lyrics: Lyrics, positionMs: Long, onSeek: (Long) -> Unit, viewModel: LyricsViewModel = hiltViewModel()) {
+    val align = when (viewModel.lyricsPosition) {
+        com.sonora.music.data.settings.LyricsPosition.LEFT -> androidx.compose.ui.text.style.TextAlign.Start
+        com.sonora.music.data.settings.LyricsPosition.RIGHT -> androidx.compose.ui.text.style.TextAlign.End
+        else -> androidx.compose.ui.text.style.TextAlign.Center
+    }
     if (!lyrics.synced) {
         LazyColumn(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
             itemsIndexed(lyrics.lines) { _, line ->
@@ -80,7 +85,7 @@ private fun LyricsList(lyrics: Lyrics, positionMs: Long, onSeek: (Long) -> Unit)
             val active = index == activeIndex
             Text(
                 text = line.text.ifBlank { "♪" },
-                textAlign = TextAlign.Center,
+                textAlign = align,
                 fontSize = if (active) 22.sp else 18.sp,
                 fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
                 color = if (active) MaterialTheme.colorScheme.primary

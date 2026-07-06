@@ -81,7 +81,11 @@ class MainActivity : ComponentActivity() {
                 dynamicColor = settings.dynamicColor,
                 amoled = settings.pureBlack,
             ) {
-                SonoraRoot(startRoute = defaultRoute(settings.defaultTab))
+                if (!settings.onboardingDone) {
+                    com.sonora.music.ui.screens.onboarding.OnboardingScreen(onDone = {})
+                } else {
+                    SonoraRoot(startRoute = defaultRoute(settings.defaultTab))
+                }
             }
         }
     }

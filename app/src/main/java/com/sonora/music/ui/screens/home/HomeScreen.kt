@@ -87,8 +87,9 @@ fun HomeScreen(
                 }
                 is UiState.Error -> ErrorState(s.message, onRetry = { viewModel.load() })
                 is UiState.Success -> LazyColumn(Modifier.fillMaxSize()) {
+                    val cell = if (viewModel.gridBig) 190.dp else 150.dp
                     items(s.data, key = { it.title }) { section ->
-                        HomeRow(section, onPlay)
+                        HomeRow(section, onPlay, cell)
                     }
                 }
             }
@@ -97,7 +98,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeRow(section: HomeSection, onPlay: (Track, List<Track>) -> Unit) {
+private fun HomeRow(section: HomeSection, onPlay: (Track, List<Track>) -> Unit, cell: androidx.compose.ui.unit.Dp) {
     Text(
         section.title,
         style = MaterialTheme.typography.titleLarge,
@@ -109,13 +110,13 @@ private fun HomeRow(section: HomeSection, onPlay: (Track, List<Track>) -> Unit) 
     ) {
         items(section.tracks, key = { it.id }) { track ->
             Column(
-                Modifier.width(150.dp).clickable { onPlay(track, section.tracks) },
+                Modifier.width(cell).clickable { onPlay(track, section.tracks) },
             ) {
                 AsyncImage(
                     model = track.thumbnailUrl,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(150.dp).clip(RoundedCornerShape(14.dp)),
+                    modifier = Modifier.size(cell).clip(RoundedCornerShape(14.dp)),
                 )
                 Text(
                     track.title,
