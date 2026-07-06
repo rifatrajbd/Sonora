@@ -33,4 +33,9 @@ object Routes {
     const val BACKUP = "backup"
     const val HISTORY = "history"
     const val STATS = "stats"
+    const val ARTIST = "artist/{name}"
+    const val ALBUM = "album/{name}"
+
+    fun artist(name: String) = "artist/" + java.net.URLEncoder.encode(name, "UTF-8")
+    fun album(name: String) = "album/" + java.net.URLEncoder.encode(name, "UTF-8")
 }

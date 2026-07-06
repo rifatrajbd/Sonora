@@ -90,6 +90,7 @@ fun NowPlayingScreen(
     onCycleRepeat: () -> Unit,
     onSetSleepTimer: (Int) -> Unit,
     onSeek: (Long) -> Unit,
+    onOpenArtist: (String) -> Unit,
     onCollapse: () -> Unit,
 ) {
     var showLyrics by remember { mutableStateOf(false) }
@@ -165,7 +166,12 @@ fun NowPlayingScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
             )
-            Text(track.artistName, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                track.artistName,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.clickable { onCollapse(); onOpenArtist(track.artistName) },
+            )
             Spacer(Modifier.height(8.dp))
             QualityChip(track.maxQuality)
 

@@ -209,6 +209,20 @@ private fun SonoraRoot(startRoute: String, player: PlayerViewModel = hiltViewMod
                         onBack = { navController.popBackStack() },
                     )
                 }
+                composable(Routes.ARTIST) {
+                    com.sonora.music.ui.screens.detail.DetailScreen(
+                        isArtist = true,
+                        onPlay = { track, q -> player.play(track, q) },
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                composable(Routes.ALBUM) {
+                    com.sonora.music.ui.screens.detail.DetailScreen(
+                        isArtist = false,
+                        onPlay = { track, q -> player.play(track, q) },
+                        onBack = { navController.popBackStack() },
+                    )
+                }
             }
 
             // Mini-player docked above the bottom nav
@@ -257,6 +271,7 @@ private fun SonoraRoot(startRoute: String, player: PlayerViewModel = hiltViewMod
                 onCycleRepeat = player::cycleRepeatMode,
                 onSetSleepTimer = player::setSleepTimer,
                 onSeek = player::seekTo,
+                onOpenArtist = { name -> navController.navigate(Routes.artist(name)) },
                 onCollapse = { showNowPlaying = false },
             )
         }
