@@ -61,6 +61,15 @@ class PlayerConnection @Inject constructor(
     private val _preferredQuality = MutableStateFlow(AudioQuality.LOSSLESS)
     val preferredQuality: StateFlow<AudioQuality> = _preferredQuality.asStateFlow()
 
+    /** Repeat mode: 0 = off, 1 = repeat all, 2 = repeat one. */
+    private val _repeatMode = MutableStateFlow(0)
+    val repeatMode: StateFlow<Int> = _repeatMode.asStateFlow()
+
+    /** Sleep-timer end time (epoch ms), or null when off. */
+    private val _sleepTimerEndMs = MutableStateFlow<Long?>(null)
+    val sleepTimerEndMs: StateFlow<Long?> = _sleepTimerEndMs.asStateFlow()
+    private var sleepJob: kotlinx.coroutines.Job? = null
+
     /** Current playback position in ms, polled while playing (drives synced-lyrics highlight). */
     private val _positionMs = MutableStateFlow(0L)
     val positionMs: StateFlow<Long> = _positionMs.asStateFlow()
@@ -90,8 +99,14 @@ class PlayerConnection @Inject constructor(
                     }
 
                     override fun onPlaybackStateChanged(state: Int) {
-                        // Auto-advance only when a track actually finishes playing.
-                        if (state == Player.STATE_ENDED) { consecutiveFailures = 0; next() }
+                        if (state == Player.STATE_ENDED) {
+                            consecutiveFailures = 0
+                            when (_repeatMode.value) {
+                                2 -> playIndex(index)                 // repeat one
+                                1 -> playIndex((index + 1) % queue.size.coerceAtLeast(1)) // repeat all (wrap)
+                                else -> next()                         // off
+                            }
+                        }
                     }
 
                     override fun onPlayerError(e: androidx.media3.common.PlaybackException) {
@@ -137,6 +152,21 @@ class PlayerConnection @Inject constructor(
     fun setPreferredQuality(quality: AudioQuality) { _preferredQuality.value = quality }
 
     fun seekTo(ms: Long) { controller?.seekTo(ms) }
+
+    /** Cycle repeat: off -> all -> one -> off. */
+    fun cycleRepeatMode() { _repeatMode.value = (_repeatMode.value + 1) % 3 }
+
+    /** Start a sleep timer for [minutes]; pauses playback when it elapses. 0 cancels it. */
+    fun setSleepTimer(minutes: Int) {
+        sleepJob?.cancel()
+        if (minutes <= 0) { _sleepTimerEndMs.value = null; return }
+        _sleepTimerEndMs.value = System.currentTimeMillis() + minutes * 60_000L
+        sleepJob = scope.launch {
+            kotlinx.coroutines.delay(minutes * 60_000L)
+            controller?.pause()
+            _sleepTimerEndMs.value = null
+        }
+    }
 
     private fun playIndex(target: Int) {
         index = target

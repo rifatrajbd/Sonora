@@ -30,6 +30,7 @@ class SettingsViewModel @Inject constructor(
 
     fun setSourceEnabled(type: SourceType, enabled: Boolean) = store.setSourceEnabled(type, enabled)
     fun setSourceBaseUrl(type: SourceType, url: String) = store.setSourceBaseUrl(type, url)
+    fun setLocalSyncEnabled(v: Boolean) = store.setLocalSyncEnabled(v)
 
     /** Sources the user can meaningfully configure in the UI (name shown generically elsewhere). */
     val configurableSources = SourceType.entries.filter { it != SourceType.LOCAL }

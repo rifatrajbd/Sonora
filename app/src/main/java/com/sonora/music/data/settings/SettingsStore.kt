@@ -28,6 +28,8 @@ data class SonoraSettings(
     val pureBlack: Boolean = true,
     val dynamicColor: Boolean = true,
     val audioQuality: AudioQuality = AudioQuality.LOSSLESS,
+    /** Whether to include on-device audio files in the library. */
+    val localSyncEnabled: Boolean = false,
     /** Per-source enable overrides. Absent = use built-in default. */
     val sourceEnabled: Map<SourceType, Boolean> = emptyMap(),
     /** Per-source base-URL overrides for the provider backends. */
@@ -69,6 +71,7 @@ class SettingsStore @Inject constructor(
             pureBlack = this[KEY_PURE_BLACK] ?: true,
             dynamicColor = this[KEY_DYNAMIC] ?: true,
             audioQuality = this[KEY_QUALITY]?.let { runCatching { AudioQuality.valueOf(it) }.getOrNull() } ?: AudioQuality.LOSSLESS,
+            localSyncEnabled = this[KEY_LOCAL_SYNC] ?: false,
             sourceEnabled = enabled,
             sourceBaseUrl = urls,
         )
@@ -85,6 +88,9 @@ class SettingsStore @Inject constructor(
     }
     fun setAudioQuality(q: AudioQuality) = update { it[KEY_QUALITY] = q.name }.also {
         _settings.value = _settings.value.copy(audioQuality = q)
+    }
+    fun setLocalSyncEnabled(v: Boolean) = update { it[KEY_LOCAL_SYNC] = v }.also {
+        _settings.value = _settings.value.copy(localSyncEnabled = v)
     }
     fun setSourceEnabled(type: SourceType, enabled: Boolean) =
         update { it[booleanPreferencesKey("enabled_${type.name}")] = enabled }.also {
@@ -108,5 +114,6 @@ class SettingsStore @Inject constructor(
         private val KEY_PURE_BLACK = booleanPreferencesKey("pure_black")
         private val KEY_DYNAMIC = booleanPreferencesKey("dynamic_color")
         private val KEY_QUALITY = stringPreferencesKey("audio_quality")
+        private val KEY_LOCAL_SYNC = booleanPreferencesKey("local_sync")
     }
 }

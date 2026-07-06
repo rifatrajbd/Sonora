@@ -35,6 +35,7 @@ object SourceModule {
         youtube: YouTubeSource,
         apple: AppleMusicSource,
         jiosaavn: JioSaavnSource,
+        local: com.sonora.music.data.source.LocalMusicSource,
     ): Set<@JvmSuppressWildcards MusicSource> = setOf(
         // Lossless trio on one self-hosted squid.wtf backend (off until configured)
         QobuzSource(client, json, config, settings),
@@ -44,5 +45,7 @@ object SourceModule {
         youtube,
         apple,
         jiosaavn,
+        // On-device music (enabled via Settings)
+        local,
     )
 }

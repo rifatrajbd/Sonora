@@ -100,12 +100,21 @@ fun SourcesScreen(onBack: () -> Unit, vm: SettingsViewModel = hiltViewModel()) {
     val s by vm.settings.collectAsStateWithLifecycle()
     SettingsScaffold("Music sources", onBack) { mod ->
         Column(mod.padding(bottom = 24.dp)) {
+            SectionLabel("On-device")
+            SwitchRow(
+                "Sync local music",
+                "Include audio files stored on this device in your library",
+                s.localSyncEnabled,
+                vm::setLocalSyncEnabled,
+            )
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            SectionLabel("Providers")
             Text(
-                "Enable and configure your providers. Each source needs its own backend URL; " +
-                    "toggle a source on and paste its endpoint.",
+                "Toggle a source on and paste its backend URL. Sources without a working " +
+                    "backend stay off so playback doesn't skip.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
             vm.configurableSources.forEachIndexed { i, type ->
                 val enabled = s.sourceEnabled[type] ?: (type == com.sonora.music.core.model.SourceType.YOUTUBE_MUSIC || type == com.sonora.music.core.model.SourceType.JIOSAAVN)

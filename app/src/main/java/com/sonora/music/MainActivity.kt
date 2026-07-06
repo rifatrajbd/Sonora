@@ -83,6 +83,8 @@ private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
     val hasNext by player.hasNext.collectAsStateWithLifecycle()
     val hasPrevious by player.hasPrevious.collectAsStateWithLifecycle()
     val positionMs by player.positionMs.collectAsStateWithLifecycle()
+    val repeatMode by player.repeatMode.collectAsStateWithLifecycle()
+    val sleepEndMs by player.sleepTimerEndMs.collectAsStateWithLifecycle()
     var showNowPlaying by remember { mutableStateOf(false) }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -187,11 +189,15 @@ private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
                 hasNext = hasNext,
                 hasPrevious = hasPrevious,
                 positionMs = positionMs,
+                repeatMode = repeatMode,
+                sleepActive = sleepEndMs != null,
                 onPlayPause = player::togglePlayPause,
                 onNext = player::next,
                 onPrevious = player::previous,
                 onToggleLike = player::toggleLikeCurrent,
                 onToggleDownload = player::toggleDownloadCurrent,
+                onCycleRepeat = player::cycleRepeatMode,
+                onSetSleepTimer = player::setSleepTimer,
                 onSeek = player::seekTo,
                 onCollapse = { showNowPlaying = false },
             )
