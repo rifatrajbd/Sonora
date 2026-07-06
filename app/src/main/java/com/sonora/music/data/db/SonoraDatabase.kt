@@ -52,6 +52,39 @@ interface SongDao {
 }
 
 @Dao
+interface HistoryDao {
+    @Insert
+    suspend fun record(event: PlayEventEntity)
+
+    /** Most-recently-played, one row per song. */
+    @Query(
+        "SELECT * FROM play_events WHERE id IN " +
+            "(SELECT MAX(id) FROM play_events GROUP BY songId) ORDER BY playedAt DESC LIMIT 100"
+    )
+    fun recentlyPlayed(): Flow<List<PlayEventEntity>>
+
+    /** Top songs by play count. */
+    @Query(
+        "SELECT * FROM play_events WHERE id IN " +
+            "(SELECT MAX(id) FROM play_events GROUP BY songId) " +
+            "ORDER BY (SELECT COUNT(*) FROM play_events e WHERE e.songId = play_events.songId) DESC LIMIT 50"
+    )
+    fun topSongs(): Flow<List<PlayEventEntity>>
+
+    @Query("SELECT artistName, COUNT(*) AS plays FROM play_events GROUP BY artistName ORDER BY plays DESC LIMIT 50")
+    fun topArtists(): Flow<List<ArtistPlays>>
+
+    @Query("SELECT COUNT(*) FROM play_events")
+    fun totalPlays(): Flow<Int>
+
+    @Query("SELECT COALESCE(SUM(durationMs), 0) FROM play_events")
+    fun totalListenedMs(): Flow<Long>
+
+    @Query("DELETE FROM play_events")
+    suspend fun clear()
+}
+
+@Dao
 interface PlaylistDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun create(playlist: PlaylistEntity): Long
@@ -70,13 +103,14 @@ interface PlaylistDao {
 }
 
 @Database(
-    entities = [SongEntity::class, PlaylistEntity::class, PlaylistSongCrossRef::class],
-    version = 1,
+    entities = [SongEntity::class, PlayEventEntity::class, PlaylistEntity::class, PlaylistSongCrossRef::class],
+    version = 2,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
 abstract class SonoraDatabase : RoomDatabase() {
     abstract fun songDao(): SongDao
+    abstract fun historyDao(): HistoryDao
     abstract fun playlistDao(): PlaylistDao
 
     companion object {

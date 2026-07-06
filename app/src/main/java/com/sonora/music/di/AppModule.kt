@@ -53,4 +53,5 @@ object AppModule {
 
     @Provides fun songDao(db: SonoraDatabase): SongDao = db.songDao()
     @Provides fun playlistDao(db: SonoraDatabase): PlaylistDao = db.playlistDao()
+    @Provides fun historyDao(db: SonoraDatabase): com.sonora.music.data.db.HistoryDao = db.historyDao()
 }

@@ -39,6 +39,11 @@ class PlayerConnection @Inject constructor(
     private val queue = mutableListOf<Track>()
     private var index = -1
 
+    private val _queueFlow = MutableStateFlow<List<Track>>(emptyList())
+    val queueFlow: StateFlow<List<Track>> = _queueFlow.asStateFlow()
+    private val _currentIndex = MutableStateFlow(-1)
+    val currentIndex: StateFlow<Int> = _currentIndex.asStateFlow()
+
     /** Consecutive resolve/playback failures; bounded so a dead provider can't skip the queue. */
     private var consecutiveFailures = 0
     private val maxConsecutiveFailures = 3
@@ -125,7 +130,13 @@ class PlayerConnection @Inject constructor(
         if (tracks.isEmpty()) return
         queue.clear()
         queue.addAll(tracks)
+        _queueFlow.value = queue.toList()
         playIndex(startIndex.coerceIn(0, queue.lastIndex))
+    }
+
+    /** Jump to a specific queue position (e.g. tapped in the queue sheet). */
+    fun jumpTo(targetIndex: Int) {
+        if (targetIndex in queue.indices) playIndex(targetIndex)
     }
 
     /** Convenience: play a single track as a one-item queue. */
@@ -170,6 +181,7 @@ class PlayerConnection @Inject constructor(
 
     private fun playIndex(target: Int) {
         index = target
+        _currentIndex.value = target
         val track = queue[target]
         _currentTrack.value = track
         updateNavState()
@@ -203,6 +215,7 @@ class PlayerConnection @Inject constructor(
                 prepare()
                 play()
             }
+            runCatching { repository.recordPlay(track) }
         }
     }
 

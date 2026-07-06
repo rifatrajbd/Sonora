@@ -25,20 +25,28 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.RepeatOne
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,6 +79,9 @@ fun NowPlayingScreen(
     positionMs: Long,
     repeatMode: Int,
     sleepActive: Boolean,
+    queue: List<Track>,
+    currentIndex: Int,
+    onJumpTo: (Int) -> Unit,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
@@ -83,6 +94,7 @@ fun NowPlayingScreen(
 ) {
     var showLyrics by remember { mutableStateOf(false) }
     var showSleepDialog by remember { mutableStateOf(false) }
+    var showQueue by remember { mutableStateOf(false) }
     val accent = MaterialTheme.colorScheme.primary
 
     Box(Modifier.fillMaxSize()) {
@@ -247,7 +259,34 @@ fun NowPlayingScreen(
                     )
                 }
             }
+
+            // Swipe up (or tap) this handle to reveal the queue / playlist.
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { showQueue = true }
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures { _, dragAmount ->
+                            if (dragAmount < -8f) showQueue = true
+                        }
+                    }
+                    .padding(top = 4.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Up next", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp))
+            }
         }
+    }
+
+    if (showQueue) {
+        QueueSheet(
+            queue = queue,
+            currentIndex = currentIndex,
+            onJumpTo = { onJumpTo(it); showQueue = false },
+            onDismiss = { showQueue = false },
+        )
     }
 
     if (showSleepDialog) {
@@ -283,4 +322,48 @@ private fun SleepTimerDialog(onPick: (Int) -> Unit, onDismiss: () -> Unit) {
 private fun fmt(ms: Long): String {
     val totalSec = (ms / 1000).coerceAtLeast(0)
     return "%d:%02d".format(totalSec / 60, totalSec % 60)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QueueSheet(
+    queue: List<Track>,
+    currentIndex: Int,
+    onJumpTo: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Text(
+            "Up next",
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(start = 20.dp, bottom = 8.dp),
+        )
+        LazyColumn(Modifier.fillMaxWidth()) {
+            itemsIndexed(queue, key = { i, t -> "$i-${t.id}" }) { i, t ->
+                Row(
+                    Modifier.fillMaxWidth().clickable { onJumpTo(i) }.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    coil.compose.AsyncImage(
+                        model = t.thumbnailUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(44.dp).clip(RoundedCornerShape(6.dp)),
+                    )
+                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                        Text(
+                            t.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (i == currentIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(t.artistName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    if (i == currentIndex) {
+                        Icon(Icons.Rounded.QueueMusic, contentDescription = "Now playing", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        }
+    }
 }

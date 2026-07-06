@@ -44,10 +44,14 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import com.sonora.music.data.settings.ThemeMode
 import com.sonora.music.ui.screens.settings.AboutScreen
 import com.sonora.music.ui.screens.settings.AppearanceScreen
-import com.sonora.music.ui.screens.settings.AudioQualityScreen
+import com.sonora.music.ui.screens.settings.BackupScreen
+import com.sonora.music.ui.screens.settings.ContentScreen
+import com.sonora.music.ui.screens.settings.PlayerSettingsScreen
+import com.sonora.music.ui.screens.settings.PrivacyScreen
 import com.sonora.music.ui.screens.settings.SettingsScreen
 import com.sonora.music.ui.screens.settings.SettingsViewModel
 import com.sonora.music.ui.screens.settings.SourcesScreen
+import com.sonora.music.ui.screens.settings.StorageScreen
 import com.sonora.music.ui.theme.SonoraTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -64,19 +68,34 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.DARK -> true
                 ThemeMode.LIGHT -> false
             }
+            // Privacy: block screenshots / screen recording when enabled.
+            LaunchedEffect(settings.disableScreenshot) {
+                if (settings.disableScreenshot) {
+                    window.setFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE, android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                } else {
+                    window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                }
+            }
             SonoraTheme(
                 darkTheme = darkTheme,
                 dynamicColor = settings.dynamicColor,
                 amoled = settings.pureBlack,
             ) {
-                SonoraRoot()
+                SonoraRoot(startRoute = defaultRoute(settings.defaultTab))
             }
         }
     }
 }
 
+private fun defaultRoute(tab: com.sonora.music.data.settings.DefaultTab) = when (tab) {
+    com.sonora.music.data.settings.DefaultTab.HOME -> TopLevelDestination.HOME.route
+    com.sonora.music.data.settings.DefaultTab.SEARCH -> TopLevelDestination.SEARCH.route
+    com.sonora.music.data.settings.DefaultTab.LIBRARY -> TopLevelDestination.LIBRARY.route
+    com.sonora.music.data.settings.DefaultTab.OFFLINE -> TopLevelDestination.OFFLINE.route
+}
+
 @Composable
-private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
+private fun SonoraRoot(startRoute: String, player: PlayerViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val currentTrack by player.currentTrack.collectAsStateWithLifecycle()
     val isPlaying by player.isPlaying.collectAsStateWithLifecycle()
@@ -89,6 +108,8 @@ private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
     val repeatMode by player.repeatMode.collectAsStateWithLifecycle()
     val sleepEndMs by player.sleepTimerEndMs.collectAsStateWithLifecycle()
     val isOnline by player.isOnline.collectAsStateWithLifecycle()
+    val queue by player.queue.collectAsStateWithLifecycle()
+    val currentIndex by player.currentIndex.collectAsStateWithLifecycle()
     var showNowPlaying by remember { mutableStateOf(false) }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -128,7 +149,7 @@ private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
-            NavHost(navController = navController, startDestination = TopLevelDestination.HOME.route) {
+            NavHost(navController = navController, startDestination = startRoute) {
                 composable(TopLevelDestination.HOME.route) {
                     HomeScreen(
                         onPlay = { track, queue -> player.play(track, queue) },
@@ -140,7 +161,11 @@ private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
                     SearchScreen(onPlay = { track, queue -> player.play(track, queue) })
                 }
                 composable(TopLevelDestination.LIBRARY.route) {
-                    LibraryScreen(onPlay = { track, queue -> player.play(track, queue) })
+                    LibraryScreen(
+                        onPlay = { track, q -> player.play(track, q) },
+                        onOpenHistory = { navController.navigate(Routes.HISTORY) },
+                        onOpenStats = { navController.navigate(Routes.STATS) },
+                    )
                 }
                 composable(TopLevelDestination.OFFLINE.route) {
                     OfflineScreen(onPlay = { track, queue -> player.play(track, queue) }, isOnline = isOnline)
@@ -154,23 +179,35 @@ private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
                 composable(Routes.SETTINGS) {
                     SettingsScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenAbout = { navController.navigate(Routes.ABOUT) },
-                        onOpenSources = { navController.navigate(Routes.SOURCES) },
-                        onOpenQuality = { navController.navigate(Routes.QUALITY) },
                         onOpenAppearance = { navController.navigate(Routes.APPEARANCE) },
+                        onOpenContent = { navController.navigate(Routes.CONTENT) },
+                        onOpenPlayer = { navController.navigate(Routes.PLAYER_SETTINGS) },
+                        onOpenStorage = { navController.navigate(Routes.STORAGE) },
+                        onOpenPrivacy = { navController.navigate(Routes.PRIVACY) },
+                        onOpenSources = { navController.navigate(Routes.SOURCES) },
+                        onOpenBackup = { navController.navigate(Routes.BACKUP) },
+                        onOpenAbout = { navController.navigate(Routes.ABOUT) },
                     )
                 }
-                composable(Routes.ABOUT) {
-                    AboutScreen(onBack = { navController.popBackStack() })
+                composable(Routes.ABOUT) { AboutScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.SOURCES) { SourcesScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.APPEARANCE) { AppearanceScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.CONTENT) { ContentScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.PLAYER_SETTINGS) { PlayerSettingsScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.STORAGE) { StorageScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.PRIVACY) { PrivacyScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.BACKUP) { BackupScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.HISTORY) {
+                    com.sonora.music.ui.screens.stats.HistoryScreen(
+                        onPlay = { track, q -> player.play(track, q) },
+                        onBack = { navController.popBackStack() },
+                    )
                 }
-                composable(Routes.SOURCES) {
-                    SourcesScreen(onBack = { navController.popBackStack() })
-                }
-                composable(Routes.QUALITY) {
-                    AudioQualityScreen(onBack = { navController.popBackStack() })
-                }
-                composable(Routes.APPEARANCE) {
-                    AppearanceScreen(onBack = { navController.popBackStack() })
+                composable(Routes.STATS) {
+                    com.sonora.music.ui.screens.stats.StatsScreen(
+                        onPlay = { track, q -> player.play(track, q) },
+                        onBack = { navController.popBackStack() },
+                    )
                 }
             }
 
@@ -209,6 +246,9 @@ private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
                 positionMs = positionMs,
                 repeatMode = repeatMode,
                 sleepActive = sleepEndMs != null,
+                queue = queue,
+                currentIndex = currentIndex,
+                onJumpTo = player::jumpTo,
                 onPlayPause = player::togglePlayPause,
                 onNext = player::next,
                 onPrevious = player::previous,

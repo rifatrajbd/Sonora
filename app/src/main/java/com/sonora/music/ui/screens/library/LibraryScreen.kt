@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material.icons.rounded.AutoFixHigh
+import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -33,6 +35,8 @@ import com.sonora.music.ui.components.TrackRow
 @Composable
 fun LibraryScreen(
     onPlay: (Track, List<Track>) -> Unit,
+    onOpenHistory: () -> Unit,
+    onOpenStats: () -> Unit,
     viewModel: LibraryViewModel = hiltViewModel(),
 ) {
     val liked by viewModel.likedSongs.collectAsStateWithLifecycle()
@@ -67,6 +71,19 @@ fun LibraryScreen(
     LazyColumn(Modifier.fillMaxSize()) {
         item {
             Text("Library", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(20.dp))
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilledTonalButton(onClick = onOpenHistory) {
+                    Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
+                    Text("History")
+                }
+                FilledTonalButton(onClick = onOpenStats) {
+                    Icon(Icons.Rounded.BarChart, contentDescription = null, modifier = Modifier.padding(end = 6.dp))
+                    Text("Stats")
+                }
+            }
         }
 
         if (localEnabled) {

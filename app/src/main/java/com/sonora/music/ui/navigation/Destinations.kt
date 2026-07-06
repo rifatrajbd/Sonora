@@ -25,6 +25,12 @@ object Routes {
     const val SETTINGS = "settings"
     const val ABOUT = "about"
     const val SOURCES = "sources"
-    const val QUALITY = "quality"
     const val APPEARANCE = "appearance"
+    const val CONTENT = "content"
+    const val PLAYER_SETTINGS = "player_settings"
+    const val STORAGE = "storage"
+    const val PRIVACY = "privacy"
+    const val BACKUP = "backup"
+    const val HISTORY = "history"
+    const val STATS = "stats"
 }

@@ -5,6 +5,9 @@ import com.sonora.music.core.model.SearchResults
 import com.sonora.music.core.model.StreamInfo
 import com.sonora.music.core.model.Track
 import com.sonora.music.core.source.SourceResolver
+import com.sonora.music.data.db.ArtistPlays
+import com.sonora.music.data.db.HistoryDao
+import com.sonora.music.data.db.PlayEventEntity
 import com.sonora.music.data.db.SongDao
 import com.sonora.music.data.db.SongEntity
 import com.sonora.music.data.download.DownloadManager
@@ -21,7 +24,9 @@ import javax.inject.Singleton
 class MusicRepository @Inject constructor(
     private val resolver: SourceResolver,
     private val songDao: SongDao,
+    private val historyDao: HistoryDao,
     private val downloadManager: DownloadManager,
+    private val settings: com.sonora.music.data.settings.SettingsStore,
 ) {
     suspend fun search(query: String): SearchResults = resolver.searchAll(query)
 
@@ -55,6 +60,22 @@ class MusicRepository @Inject constructor(
             songDao.setLiked(track.id, nowLiked, if (nowLiked) System.currentTimeMillis() else null)
         }
     }
+
+    // --- history & stats -------------------------------------------------------
+
+    suspend fun recordPlay(track: Track) {
+        if (settings.settings.value.pauseListenHistory) return
+        historyDao.record(PlayEventEntity.from(track))
+    }
+
+    val recentlyPlayed: Flow<List<Track>> =
+        historyDao.recentlyPlayed().map { list -> list.map { it.toTrack() } }
+    val topSongs: Flow<List<Track>> =
+        historyDao.topSongs().map { list -> list.map { it.toTrack() } }
+    val topArtists: Flow<List<ArtistPlays>> = historyDao.topArtists()
+    val totalPlays: Flow<Int> = historyDao.totalPlays()
+    val totalListenedMs: Flow<Long> = historyDao.totalListenedMs()
+    suspend fun clearHistory() = historyDao.clear()
 
     /** Download for offline, or remove the local copy if already downloaded. */
     suspend fun toggleDownload(track: Track): Result<Unit> {

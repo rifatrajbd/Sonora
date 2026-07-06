@@ -29,6 +29,8 @@ class PlayerViewModel @Inject constructor(
     val positionMs: StateFlow<Long> = playerConnection.positionMs
     val repeatMode: StateFlow<Int> = playerConnection.repeatMode
     val sleepTimerEndMs: StateFlow<Long?> = playerConnection.sleepTimerEndMs
+    val queue: StateFlow<List<Track>> = playerConnection.queueFlow
+    val currentIndex: StateFlow<Int> = playerConnection.currentIndex
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val currentIsLiked: StateFlow<Boolean> = currentTrack
@@ -60,6 +62,7 @@ class PlayerViewModel @Inject constructor(
     fun seekTo(ms: Long) = playerConnection.seekTo(ms)
     fun cycleRepeatMode() = playerConnection.cycleRepeatMode()
     fun setSleepTimer(minutes: Int) = playerConnection.setSleepTimer(minutes)
+    fun jumpTo(index: Int) = playerConnection.jumpTo(index)
 
     fun toggleLikeCurrent() {
         val track = currentTrack.value ?: return

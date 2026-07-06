@@ -40,6 +40,39 @@ data class SongEntity(
     }
 }
 
+/** One playback event, denormalised so history & stats queries need no joins. */
+@Entity(tableName = "play_events")
+data class PlayEventEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val songId: String,
+    val title: String,
+    val artistName: String,
+    val albumTitle: String?,
+    val thumbnailUrl: String?,
+    val source: SourceType,
+    val sourceId: String,
+    val maxQuality: AudioQuality,
+    val durationMs: Long,
+    val playedAt: Long = System.currentTimeMillis(),
+) {
+    fun toTrack() = Track(
+        id = songId, sourceId = sourceId, source = source, title = title,
+        artistName = artistName, albumTitle = albumTitle, thumbnailUrl = thumbnailUrl,
+        durationMs = durationMs, maxQuality = maxQuality,
+    )
+
+    companion object {
+        fun from(t: Track) = PlayEventEntity(
+            songId = t.id, title = t.title, artistName = t.artistName, albumTitle = t.albumTitle,
+            thumbnailUrl = t.thumbnailUrl, source = t.source, sourceId = t.sourceId,
+            maxQuality = t.maxQuality, durationMs = t.durationMs,
+        )
+    }
+}
+
+/** Aggregated top-artist row for the stats screen. */
+data class ArtistPlays(val artistName: String, val plays: Int)
+
 @Entity(tableName = "playlists")
 data class PlaylistEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
