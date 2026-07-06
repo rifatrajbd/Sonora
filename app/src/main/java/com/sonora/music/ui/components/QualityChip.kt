@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.sonora.music.core.model.AudioQuality
-import com.sonora.music.core.model.SourceType
 
 /**
  * Spotify-style quality badge: "HiFi", "Hi-Res", "HD"… Lossless tiers get the coral accent,
@@ -36,13 +35,3 @@ fun QualityChip(quality: AudioQuality, modifier: Modifier = Modifier) {
     }
 }
 
-/** Small text badge showing which source a track came from. */
-@Composable
-fun SourceBadge(source: SourceType, modifier: Modifier = Modifier) {
-    Text(
-        text = source.displayName,
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier,
-    )
-}

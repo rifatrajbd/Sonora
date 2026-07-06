@@ -38,8 +38,14 @@ import com.sonora.music.ui.screens.home.HomeScreen
 import com.sonora.music.ui.screens.library.LibraryScreen
 import com.sonora.music.ui.screens.player.NowPlayingScreen
 import com.sonora.music.ui.screens.search.SearchScreen
+import androidx.compose.foundation.isSystemInDarkTheme
+import com.sonora.music.data.settings.ThemeMode
 import com.sonora.music.ui.screens.settings.AboutScreen
+import com.sonora.music.ui.screens.settings.AppearanceScreen
+import com.sonora.music.ui.screens.settings.AudioQualityScreen
 import com.sonora.music.ui.screens.settings.SettingsScreen
+import com.sonora.music.ui.screens.settings.SettingsViewModel
+import com.sonora.music.ui.screens.settings.SourcesScreen
 import com.sonora.music.ui.theme.SonoraTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -49,7 +55,18 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
-            SonoraTheme {
+            val settingsVm: SettingsViewModel = hiltViewModel()
+            val settings by settingsVm.settings.collectAsStateWithLifecycle()
+            val darkTheme = when (settings.themeMode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.DARK -> true
+                ThemeMode.LIGHT -> false
+            }
+            SonoraTheme(
+                darkTheme = darkTheme,
+                dynamicColor = settings.dynamicColor,
+                amoled = settings.pureBlack,
+            ) {
                 SonoraRoot()
             }
         }
@@ -119,10 +136,22 @@ private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
                     SettingsScreen(
                         onBack = { navController.popBackStack() },
                         onOpenAbout = { navController.navigate(Routes.ABOUT) },
+                        onOpenSources = { navController.navigate(Routes.SOURCES) },
+                        onOpenQuality = { navController.navigate(Routes.QUALITY) },
+                        onOpenAppearance = { navController.navigate(Routes.APPEARANCE) },
                     )
                 }
                 composable(Routes.ABOUT) {
                     AboutScreen(onBack = { navController.popBackStack() })
+                }
+                composable(Routes.SOURCES) {
+                    SourcesScreen(onBack = { navController.popBackStack() })
+                }
+                composable(Routes.QUALITY) {
+                    AudioQualityScreen(onBack = { navController.popBackStack() })
+                }
+                composable(Routes.APPEARANCE) {
+                    AppearanceScreen(onBack = { navController.popBackStack() })
                 }
             }
 

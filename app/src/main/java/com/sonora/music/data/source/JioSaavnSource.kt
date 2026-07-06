@@ -32,16 +32,20 @@ class JioSaavnSource @Inject constructor(
     private val client: OkHttpClient,
     private val json: Json,
     private val config: RemoteConfigRepository,
+    private val settings: com.sonora.music.data.settings.SettingsStore,
 ) : MusicSource {
 
     override val type = SourceType.JIOSAAVN
 
     private val cfg get() = config.config.value.forType(type)
-    override val enabled: Boolean get() = cfg?.enabled ?: true
+    override val enabled: Boolean
+        get() = settings.settings.value.sourceEnabled[type] ?: cfg?.enabled ?: true
     override val priority: Int
         get() = cfg?.priority ?: SourceResolver.PRIORITY_DEFAULTS[type] ?: 50
 
-    private val baseUrl: String get() = (cfg?.baseUrl ?: DEFAULT_BASE).trimEnd('/')
+    private val baseUrl: String
+        get() = (settings.settings.value.sourceBaseUrl[type]?.takeIf { it.isNotBlank() }
+            ?: cfg?.baseUrl ?: DEFAULT_BASE).trimEnd('/')
 
     override suspend fun search(query: String): SearchResults = withContext(Dispatchers.IO) {
         val body = get("$baseUrl/api/search/songs?query=${query.encode()}&limit=25")
@@ -106,6 +110,7 @@ class JioSaavnSource @Inject constructor(
     private fun String.encode() = java.net.URLEncoder.encode(this, "UTF-8")
 
     companion object {
-        const val DEFAULT_BASE = "https://saavn.dev"
+        // A public, DRM-free JioSaavn API instance (sumitkolhe-schema). Override in Settings.
+        const val DEFAULT_BASE = "https://saavn-api.nandanvarma.com"
     }
 }

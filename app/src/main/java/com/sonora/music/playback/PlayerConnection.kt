@@ -39,6 +39,13 @@ class PlayerConnection @Inject constructor(
     private val queue = mutableListOf<Track>()
     private var index = -1
 
+    /** Consecutive resolve/playback failures; bounded so a dead provider can't skip the queue. */
+    private var consecutiveFailures = 0
+    private val maxConsecutiveFailures = 3
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
     private val _currentTrack = MutableStateFlow<Track?>(null)
     val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
 
@@ -79,11 +86,18 @@ class PlayerConnection @Inject constructor(
                 c.addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(playing: Boolean) {
                         _isPlaying.value = playing
+                        if (playing) { consecutiveFailures = 0; _error.value = null }
                     }
 
                     override fun onPlaybackStateChanged(state: Int) {
-                        // Auto-advance when the current stream finishes.
-                        if (state == Player.STATE_ENDED) next()
+                        // Auto-advance only when a track actually finishes playing.
+                        if (state == Player.STATE_ENDED) { consecutiveFailures = 0; next() }
+                    }
+
+                    override fun onPlayerError(e: androidx.media3.common.PlaybackException) {
+                        // The stream failed to play (bad URL / format). Skip within the failure cap.
+                        android.util.Log.w("PlayerConnection", "playback error: ${e.message}")
+                        onTrackFailed("Couldn't play this track")
                     }
                 })
             }
@@ -136,8 +150,8 @@ class PlayerConnection @Inject constructor(
                 repository.localPath(track.id)?.let { "file://$it" }
                     ?: runCatching { repository.resolveStream(track, _preferredQuality.value).url }.getOrNull()
             } ?: run {
-                // Couldn't resolve this track from any source; skip to the next one.
-                next()
+                // Couldn't resolve a stream from any enabled source.
+                onTrackFailed("Couldn't find a playable source for \"${track.title}\"")
                 return@launch
             }
 
@@ -165,6 +179,22 @@ class PlayerConnection @Inject constructor(
     private fun updateNavState() {
         _hasNext.value = index < queue.lastIndex
         _hasPrevious.value = index > 0
+    }
+
+    /**
+     * Handle a track that couldn't be resolved or played. Skips forward only while under the
+     * consecutive-failure cap, so a dead provider can't race through the whole queue silently.
+     */
+    private fun onTrackFailed(message: String) {
+        consecutiveFailures++
+        _error.value = message
+        if (consecutiveFailures < maxConsecutiveFailures && index < queue.lastIndex) {
+            next()
+        } else {
+            // Give up gracefully; keep the current track shown, stop churning.
+            consecutiveFailures = 0
+            controller?.pause()
+        }
     }
 
     fun release() {

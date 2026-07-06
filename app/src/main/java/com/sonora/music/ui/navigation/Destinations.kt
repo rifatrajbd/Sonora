@@ -22,4 +22,7 @@ object Routes {
     const val EXPLORE = "explore"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
+    const val SOURCES = "sources"
+    const val QUALITY = "quality"
+    const val APPEARANCE = "appearance"
 }

@@ -27,12 +27,14 @@ import javax.inject.Singleton
 @Singleton
 class YouTubeSource @Inject constructor(
     private val config: RemoteConfigRepository,
+    private val settings: com.sonora.music.data.settings.SettingsStore,
 ) : MusicSource {
 
     override val type = SourceType.YOUTUBE_MUSIC
 
     private val cfg get() = config.config.value.forType(type)
-    override val enabled: Boolean get() = cfg?.enabled ?: true
+    override val enabled: Boolean
+        get() = settings.settings.value.sourceEnabled[type] ?: cfg?.enabled ?: true
     override val priority: Int
         get() = cfg?.priority ?: SourceResolver.PRIORITY_DEFAULTS[type] ?: 60
 

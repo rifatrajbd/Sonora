@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.sonora.music.core.model.Track
 import com.sonora.music.ui.components.QualityChip
-import com.sonora.music.ui.components.SourceBadge
 
 /**
  * Signature screen: full-bleed blurred artwork → floating art card → (frosted) control bar with
@@ -163,10 +162,7 @@ fun NowPlayingScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                QualityChip(track.maxQuality)
-                SourceBadge(track.source)
-            }
+            QualityChip(track.maxQuality)
 
             Spacer(Modifier.height(20.dp))
             Row(

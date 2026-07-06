@@ -25,7 +25,7 @@ android {
         val squidBase = providers.gradleProperty("SONORA_SQUID_BASE_URL").getOrElse("https://squid.wtf/")
         buildConfigField("String", "SQUID_BASE_URL", "\"$squidBase\"")
 
-        val jiosaavnBase = providers.gradleProperty("SONORA_JIOSAAVN_BASE_URL").getOrElse("https://saavn.dev/")
+        val jiosaavnBase = providers.gradleProperty("SONORA_JIOSAAVN_BASE_URL").getOrElse("https://saavn-api.nandanvarma.com/")
         buildConfigField("String", "JIOSAAVN_BASE_URL", "\"$jiosaavnBase\"")
     }
 

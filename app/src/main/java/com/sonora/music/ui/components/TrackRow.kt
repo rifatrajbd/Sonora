@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.sonora.music.core.model.Track
 
-/** A track list row: artwork, title, artist + source, and a fidelity chip on the right. */
+/** A track list row: artwork, title, artist, and a fidelity chip on the right. */
 @Composable
 fun TrackRow(
     track: Track,
@@ -50,18 +50,13 @@ fun TrackRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    track.artistName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                SourceBadge(track.source)
-            }
+            Text(
+                track.artistName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
         Spacer(Modifier.width(8.dp))
         QualityChip(track.maxQuality)

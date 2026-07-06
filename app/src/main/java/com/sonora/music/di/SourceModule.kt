@@ -31,14 +31,15 @@ object SourceModule {
         client: OkHttpClient,
         json: Json,
         config: RemoteConfigRepository,
+        settings: com.sonora.music.data.settings.SettingsStore,
         youtube: YouTubeSource,
         apple: AppleMusicSource,
         jiosaavn: JioSaavnSource,
     ): Set<@JvmSuppressWildcards MusicSource> = setOf(
-        // Lossless trio on one self-hosted squid.wtf backend
-        QobuzSource(client, json, config),
-        TidalSource(client, json, config),
-        AmazonMusicSource(client, json, config),
+        // Lossless trio on one self-hosted squid.wtf backend (off until configured)
+        QobuzSource(client, json, config, settings),
+        TidalSource(client, json, config, settings),
+        AmazonMusicSource(client, json, config, settings),
         // YouTube Music (NewPipeExtractor client-spoof) + Apple + reliable JioSaavn fallback
         youtube,
         apple,

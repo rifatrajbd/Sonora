@@ -30,6 +30,7 @@ abstract class SquidWtfSource(
     private val client: OkHttpClient,
     private val json: Json,
     private val config: RemoteConfigRepository,
+    private val settings: com.sonora.music.data.settings.SettingsStore,
 ) : MusicSource {
 
     /** squid.wtf provider slug, e.g. "qobuz", "tidal", "amazon". */
@@ -37,12 +38,15 @@ abstract class SquidWtfSource(
 
     private val cfg get() = config.config.value.forType(type)
 
-    override val enabled: Boolean get() = cfg?.enabled ?: true
+    // Off by default: this backend must be configured (base URL) before it can serve anything.
+    override val enabled: Boolean
+        get() = settings.settings.value.sourceEnabled[type] ?: cfg?.enabled ?: false
     override val priority: Int
         get() = cfg?.priority ?: SourceResolver.PRIORITY_DEFAULTS[type] ?: 0
 
     private val baseUrl: String
-        get() = (cfg?.baseUrl ?: DEFAULT_BASE).trimEnd('/')
+        get() = (settings.settings.value.sourceBaseUrl[type]?.takeIf { it.isNotBlank() }
+            ?: cfg?.baseUrl ?: DEFAULT_BASE).trimEnd('/')
 
     override suspend fun search(query: String): SearchResults = withContext(Dispatchers.IO) {
         val url = "$baseUrl/api/search?provider=$provider&q=${query.encode()}"
@@ -91,17 +95,17 @@ abstract class SquidWtfSource(
     }
 }
 
-class QobuzSource(client: OkHttpClient, json: Json, config: RemoteConfigRepository) :
-    SquidWtfSource(SourceType.QOBUZ, client, json, config) {
+class QobuzSource(client: OkHttpClient, json: Json, config: RemoteConfigRepository, settings: com.sonora.music.data.settings.SettingsStore) :
+    SquidWtfSource(SourceType.QOBUZ, client, json, config, settings) {
     override val provider = "qobuz"
 }
 
-class TidalSource(client: OkHttpClient, json: Json, config: RemoteConfigRepository) :
-    SquidWtfSource(SourceType.TIDAL, client, json, config) {
+class TidalSource(client: OkHttpClient, json: Json, config: RemoteConfigRepository, settings: com.sonora.music.data.settings.SettingsStore) :
+    SquidWtfSource(SourceType.TIDAL, client, json, config, settings) {
     override val provider = "tidal"
 }
 
-class AmazonMusicSource(client: OkHttpClient, json: Json, config: RemoteConfigRepository) :
-    SquidWtfSource(SourceType.AMAZON_MUSIC, client, json, config) {
+class AmazonMusicSource(client: OkHttpClient, json: Json, config: RemoteConfigRepository, settings: com.sonora.music.data.settings.SettingsStore) :
+    SquidWtfSource(SourceType.AMAZON_MUSIC, client, json, config, settings) {
     override val provider = "amazon"
 }

@@ -26,9 +26,19 @@ data class RemoteConfig(
     fun forType(type: SourceType): SourceConfig? = sources.firstOrNull { it.type == type }
 
     companion object {
-        /** Safe built-in defaults so the app works before/if the remote fetch fails. */
+        /**
+         * Safe built-in defaults. Only the providers that work with no user-supplied backend are
+         * enabled out of the box (YouTube via NewPipeExtractor, JioSaavn, on-device local). The
+         * backend-dependent providers stay OFF until the user configures a base URL — otherwise
+         * they fail on every request and cause playback to skip.
+         */
+        private val ENABLED_BY_DEFAULT = setOf(
+            SourceType.YOUTUBE_MUSIC, SourceType.JIOSAAVN, SourceType.LOCAL,
+        )
         val DEFAULT = RemoteConfig(
-            sources = SourceType.entries.map { SourceConfig(type = it) },
+            sources = SourceType.entries.map {
+                SourceConfig(type = it, enabled = it in ENABLED_BY_DEFAULT)
+            },
         )
     }
 }

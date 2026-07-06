@@ -33,12 +33,14 @@ class AppleMusicSource @Inject constructor(
     private val client: OkHttpClient,
     private val json: Json,
     private val config: RemoteConfigRepository,
+    private val settings: com.sonora.music.data.settings.SettingsStore,
 ) : MusicSource {
 
     override val type = SourceType.APPLE_MUSIC
 
     private val cfg get() = config.config.value.forType(type)
-    override val enabled: Boolean get() = cfg?.enabled ?: true
+    override val enabled: Boolean
+        get() = settings.settings.value.sourceEnabled[type] ?: cfg?.enabled ?: false
     override val priority: Int
         get() = cfg?.priority ?: SourceResolver.PRIORITY_DEFAULTS[type] ?: 70
 

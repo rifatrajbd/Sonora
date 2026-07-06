@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,10 +16,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Explore
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -37,6 +40,7 @@ import com.sonora.music.ui.components.EmptyState
 import com.sonora.music.ui.components.ErrorState
 import com.sonora.music.ui.components.LoadingState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onPlay: (Track, List<Track>) -> Unit,
@@ -45,6 +49,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val refreshing by viewModel.refreshing.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxWidth()) {
         Row(
@@ -63,16 +68,28 @@ fun HomeScreen(
             }
         }
 
-        when (val s = state) {
-            is UiState.Loading -> LoadingState()
-            is UiState.Empty -> EmptyState(
-                title = "Your feed is warming up",
-                subtitle = "Configure a provider, then pull to refresh.",
-            )
-            is UiState.Error -> ErrorState(s.message, onRetry = viewModel::load)
-            is UiState.Success -> LazyColumn(Modifier.fillMaxWidth()) {
-                items(s.data, key = { it.title }) { section ->
-                    HomeRow(section, onPlay)
+        PullToRefreshBox(
+            isRefreshing = refreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            when (val s = state) {
+                is UiState.Loading -> LoadingState()
+                is UiState.Empty -> androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxSize()) {
+                    // Keep it scrollable so pull-to-refresh works even when empty.
+                    item {
+                        EmptyState(
+                            title = "Your feed is warming up",
+                            subtitle = "Pull down to refresh, or configure a source in Settings.",
+                            modifier = Modifier.fillParentMaxSize(),
+                        )
+                    }
+                }
+                is UiState.Error -> ErrorState(s.message, onRetry = { viewModel.load() })
+                is UiState.Success -> LazyColumn(Modifier.fillMaxSize()) {
+                    items(s.data, key = { it.title }) { section ->
+                        HomeRow(section, onPlay)
+                    }
                 }
             }
         }

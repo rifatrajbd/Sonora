@@ -51,7 +51,7 @@ fun SearchScreen(
         when (val s = state) {
             is UiState.Empty -> EmptyState(
                 title = stringResource(R.string.search_empty),
-                subtitle = "YouTube · Qobuz · Tidal · Amazon · Apple Music",
+                subtitle = "Find songs, artists and albums",
                 icon = Icons.Rounded.Search,
             )
             is UiState.Loading -> LoadingState()

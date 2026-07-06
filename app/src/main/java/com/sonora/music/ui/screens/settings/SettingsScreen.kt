@@ -29,6 +29,9 @@ import androidx.compose.ui.unit.dp
 fun SettingsScreen(
     onBack: () -> Unit,
     onOpenAbout: () -> Unit,
+    onOpenSources: () -> Unit,
+    onOpenQuality: () -> Unit,
+    onOpenAppearance: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -43,9 +46,9 @@ fun SettingsScreen(
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            SettingRow(Icons.Rounded.Tune, "Music sources", "Enable, prioritise & configure sources") {}
-            SettingRow(Icons.Rounded.GraphicEq, "Audio quality", "HiFi / Hi-Res / HD per network") {}
-            SettingRow(Icons.Rounded.Palette, "Appearance", "Theme, dynamic color, AMOLED black") {}
+            SettingRow(Icons.Rounded.Tune, "Music sources", "Enable & configure your providers", onOpenSources)
+            SettingRow(Icons.Rounded.GraphicEq, "Audio quality", "HiFi / Hi-Res / HD", onOpenQuality)
+            SettingRow(Icons.Rounded.Palette, "Appearance", "Theme, dynamic color, AMOLED black", onOpenAppearance)
             SettingRow(Icons.Rounded.Info, "About Sonora", "Version, credits & acknowledgements", onOpenAbout)
         }
     }
