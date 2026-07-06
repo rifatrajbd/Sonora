@@ -61,9 +61,9 @@ class JioSaavnSource @Inject constructor(
                     id = o["id"]?.jsonPrimitive?.content.orEmpty(),
                     sourceId = o["id"]?.jsonPrimitive?.content.orEmpty(),
                     source = type,
-                    title = o["name"]?.jsonPrimitive?.content.orEmpty(),
-                    artistName = artists.orEmpty(),
-                    albumTitle = o["album"]?.jsonObject?.get("name")?.jsonPrimitive?.content,
+                    title = o["name"]?.jsonPrimitive?.content.orEmpty().decodeHtml(),
+                    artistName = artists.orEmpty().decodeHtml(),
+                    albumTitle = o["album"]?.jsonObject?.get("name")?.jsonPrimitive?.content?.decodeHtml(),
                     thumbnailUrl = o["image"]?.jsonArray?.lastOrNull()
                         ?.jsonObject?.get("url")?.jsonPrimitive?.content,
                     durationMs = (o["duration"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0L) * 1000,
@@ -108,6 +108,11 @@ class JioSaavnSource @Inject constructor(
             .use { if (it.isSuccessful) it.body?.string() else null }
 
     private fun String.encode() = java.net.URLEncoder.encode(this, "UTF-8")
+
+    /** JioSaavn returns HTML-encoded text (e.g. &quot;, &amp;). Decode it for display. */
+    @Suppress("DEPRECATION")
+    private fun String.decodeHtml(): String =
+        android.text.Html.fromHtml(this, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
 
     companion object {
         // A public, DRM-free JioSaavn API instance (sumitkolhe-schema). Override in Settings.

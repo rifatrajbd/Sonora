@@ -116,6 +116,9 @@ private fun SonoraRoot(startRoute: String, player: PlayerViewModel = hiltViewMod
     val currentRoute = backStackEntry?.destination?.route
     val isTopLevel = TopLevelDestination.entries.any { it.route == currentRoute }
 
+    // Back collapses the Now Playing overlay instead of exiting the app.
+    androidx.activity.compose.BackHandler(enabled = showNowPlaying) { showNowPlaying = false }
+
     // Auto-switch to the Offline tab when the connection drops.
     LaunchedEffect(isOnline) {
         if (!isOnline && currentRoute != TopLevelDestination.OFFLINE.route) {

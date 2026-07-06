@@ -200,23 +200,25 @@ fun SourcesScreen(onBack: () -> Unit, vm: SettingsViewModel = hiltViewModel()) {
             SwitchRow("Sync local music", "Include audio files stored on this device", s.localSyncEnabled, vm::setLocalSyncEnabled)
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             SectionLabel("Providers")
-            Text("Toggle a source on and paste its backend URL. Sources without a working backend stay off so playback doesn't skip.",
+            Text("The default providers work automatically. The lossless providers need their own backend URL before they can be turned on.",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
-            vm.configurableSources.forEachIndexed { i, type ->
+            vm.configurableSources.forEach { type ->
                 val enabled = s.sourceEnabled[type] ?: (type == SourceType.YOUTUBE_MUSIC || type == SourceType.JIOSAAVN)
                 val url = s.sourceBaseUrl[type] ?: ""
                 Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("Source ${i + 1}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text(qualityHint(type), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(type.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(qualityHint(type) + (if (needsBackend(type)) " · needs backend" else " · ready"),
+                                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Switch(checked = enabled, onCheckedChange = { vm.setSourceEnabled(type, it) })
                     }
-                    if (enabled) {
+                    // Only backend-dependent providers expose a URL; the defaults just work.
+                    if (enabled && needsBackend(type)) {
                         OutlinedTextField(url, { vm.setSourceBaseUrl(type, it) }, singleLine = true,
-                            label = { Text("Backend URL (optional)") }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+                            label = { Text("Backend URL") }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
                     }
                 }
                 HorizontalDivider()
@@ -231,6 +233,10 @@ private fun qualityHint(type: SourceType) = when (type) {
     SourceType.APPLE_MUSIC, SourceType.JIOSAAVN -> "HD"
     else -> "Standard"
 }
+
+/** These providers ride on a self-hosted backend and need a URL; the rest work out of the box. */
+private fun needsBackend(type: SourceType) = type == SourceType.QOBUZ || type == SourceType.TIDAL ||
+    type == SourceType.AMAZON_MUSIC || type == SourceType.APPLE_MUSIC
 
 // ---------------- shared rows ----------------
 

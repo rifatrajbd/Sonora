@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -98,7 +99,17 @@ fun NowPlayingScreen(
     var showQueue by remember { mutableStateOf(false) }
     val accent = MaterialTheme.colorScheme.primary
 
-    Box(Modifier.fillMaxSize()) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            // Opaque base so the screen behind never shows through, and consume all touches
+            // so taps/typing don't reach the screen underneath (e.g. the search field).
+            .background(MaterialTheme.colorScheme.background)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) {},
+    ) {
         AsyncImage(
             model = track.thumbnailUrl,
             contentDescription = null,
@@ -147,13 +158,9 @@ fun NowPlayingScreen(
                         modifier = Modifier.fillMaxSize(),
                     )
                 } else {
-                    // Back face — counter-rotate so text isn't mirrored.
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .graphicsLayer { rotationY = 180f }
-                            .background(MaterialTheme.colorScheme.surface),
-                    ) {
+                    // Back face — counter-rotate so text isn't mirrored. No opaque box:
+                    // lyrics read over the blurred artwork behind.
+                    Box(Modifier.fillMaxSize().graphicsLayer { rotationY = 180f }) {
                         LyricsPanel(track = track, positionMs = positionMs, onSeek = onSeek, modifier = Modifier.fillMaxSize())
                     }
                 }
@@ -202,26 +209,36 @@ fun NowPlayingScreen(
                         tint = if (repeatMode == 0) MaterialTheme.colorScheme.onSurfaceVariant else accent,
                     )
                 }
-                IconButton(onClick = onPrevious, enabled = hasPrevious, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.Rounded.SkipPrevious, contentDescription = "Previous", modifier = Modifier.size(38.dp))
+                IconButton(onClick = onPrevious, enabled = hasPrevious, modifier = Modifier.size(56.dp)) {
+                    Icon(
+                        Icons.Rounded.SkipPrevious,
+                        contentDescription = "Previous",
+                        modifier = Modifier.size(40.dp),
+                        tint = if (hasPrevious) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    )
                 }
                 Surface(
                     onClick = onPlayPause,
                     shape = CircleShape,
                     color = accent,
-                    modifier = Modifier.size(76.dp),
+                    modifier = Modifier.size(64.dp),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                             contentDescription = if (isPlaying) "Pause" else "Play",
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(44.dp),
+                            modifier = Modifier.size(36.dp),
                         )
                     }
                 }
-                IconButton(onClick = onNext, enabled = hasNext, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.Rounded.SkipNext, contentDescription = "Next", modifier = Modifier.size(38.dp))
+                IconButton(onClick = onNext, enabled = hasNext, modifier = Modifier.size(56.dp)) {
+                    Icon(
+                        Icons.Rounded.SkipNext,
+                        contentDescription = "Next",
+                        modifier = Modifier.size(40.dp),
+                        tint = if (hasNext) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    )
                 }
                 IconButton(onClick = { showSleepDialog = true }) {
                     Icon(
