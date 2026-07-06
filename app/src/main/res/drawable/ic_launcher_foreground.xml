@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sonora launcher icon — "Waveform" (concept 02).
+  Six pill bars, bottom-aligned to y=86, rising then falling, in a coral->amber sweep.
+  Bars span x 19..87 within the adaptive-icon safe zone (central ~66dp of 108).
+  Each bar is width 8, radius 4 (stadium ends); colours sampled along the brand gradient.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path android:fillColor="#FF6A47" android:pathData="M19,74 a4,4 0 0 1 8,0 v8 a4,4 0 0 1 -8,0 v-8 z" />
+    <path android:fillColor="#FF7A55" android:pathData="M31,60 a4,4 0 0 1 8,0 v22 a4,4 0 0 1 -8,0 v-22 z" />
+    <path android:fillColor="#FF8A5E" android:pathData="M43,38 a4,4 0 0 1 8,0 v44 a4,4 0 0 1 -8,0 v-44 z" />
+    <path android:fillColor="#FF9A63" android:pathData="M55,24 a4,4 0 0 1 8,0 v58 a4,4 0 0 1 -8,0 v-58 z" />
+    <path android:fillColor="#FFA967" android:pathData="M67,50 a4,4 0 0 1 8,0 v32 a4,4 0 0 1 -8,0 v-32 z" />
+    <path android:fillColor="#FFB86B" android:pathData="M79,70 a4,4 0 0 1 8,0 v12 a4,4 0 0 1 -8,0 v-12 z" />
+</vector>

@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">Sonora</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_library">Library</string>
+
+    <!-- Common states -->
+    <string name="state_loading">Loading…</string>
+    <string name="state_empty_title">Nothing here yet</string>
+    <string name="state_error_title">Something went wrong</string>
+    <string name="state_retry">Retry</string>
+
+    <!-- Search -->
+    <string name="search_hint">Songs, artists, albums…</string>
+    <string name="search_empty">Search across all your sources</string>
+
+    <!-- Library -->
+    <string name="library_liked">Liked songs</string>
+    <string name="library_playlists">Playlists</string>
+    <string name="library_downloads">Downloads</string>
+    <string name="library_local">On this device</string>
+
+    <!-- Settings / About -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_sources">Music sources</string>
+    <string name="settings_quality">Audio quality</string>
+    <string name="settings_theme">Appearance</string>
+    <string name="settings_about">About Sonora</string>
+    <string name="about_credits">Credits &amp; acknowledgements</string>
+</resources>

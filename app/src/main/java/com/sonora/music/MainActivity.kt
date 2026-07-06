@@ -1,0 +1,155 @@
+package com.sonora.music
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.sonora.music.ui.PlayerViewModel
+import com.sonora.music.ui.components.MiniPlayer
+import com.sonora.music.ui.navigation.Routes
+import com.sonora.music.ui.navigation.TopLevelDestination
+import com.sonora.music.ui.screens.home.HomeScreen
+import com.sonora.music.ui.screens.library.LibraryScreen
+import com.sonora.music.ui.screens.player.NowPlayingScreen
+import com.sonora.music.ui.screens.search.SearchScreen
+import com.sonora.music.ui.screens.settings.AboutScreen
+import com.sonora.music.ui.screens.settings.SettingsScreen
+import com.sonora.music.ui.theme.SonoraTheme
+import dagger.hilt.android.AndroidEntryPoint
+
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+        setContent {
+            SonoraTheme {
+                SonoraApp()
+            }
+        }
+    }
+}
+
+@Composable
+private fun SonoraApp(player: PlayerViewModel = hiltViewModel()) {
+    val navController = rememberNavController()
+    val currentTrack by player.currentTrack.collectAsStateWithLifecycle()
+    val isPlaying by player.isPlaying.collectAsStateWithLifecycle()
+    val isLiked by player.currentIsLiked.collectAsStateWithLifecycle()
+    val hasNext by player.hasNext.collectAsStateWithLifecycle()
+    val hasPrevious by player.hasPrevious.collectAsStateWithLifecycle()
+    var showNowPlaying by remember { mutableStateOf(false) }
+
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    val isTopLevel = TopLevelDestination.entries.any { it.route == currentRoute }
+
+    Box(Modifier.fillMaxSize()) {
+    Scaffold(
+        bottomBar = {
+            if (isTopLevel) {
+                NavigationBar {
+                    TopLevelDestination.entries.forEach { dest ->
+                        NavigationBarItem(
+                            selected = currentRoute == dest.route,
+                            onClick = {
+                                navController.navigate(dest.route) {
+                                    popUpTo(TopLevelDestination.HOME.route)
+                                    launchSingleTop = true
+                                }
+                            },
+                            icon = { Icon(dest.icon, contentDescription = dest.label) },
+                            label = { Text(dest.label) },
+                        )
+                    }
+                }
+            }
+        },
+    ) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            NavHost(navController = navController, startDestination = TopLevelDestination.HOME.route) {
+                composable(TopLevelDestination.HOME.route) {
+                    HomeScreen(onOpenSettings = { navController.navigate(Routes.SETTINGS) })
+                }
+                composable(TopLevelDestination.SEARCH.route) {
+                    SearchScreen(onPlay = { track, queue -> player.play(track, queue) })
+                }
+                composable(TopLevelDestination.LIBRARY.route) {
+                    LibraryScreen(onPlay = { track, queue -> player.play(track, queue) })
+                }
+                composable(Routes.SETTINGS) {
+                    SettingsScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenAbout = { navController.navigate(Routes.ABOUT) },
+                    )
+                }
+                composable(Routes.ABOUT) {
+                    AboutScreen(onBack = { navController.popBackStack() })
+                }
+            }
+
+            // Mini-player docked above the bottom nav
+            currentTrack?.let { track ->
+                if (isTopLevel && !showNowPlaying) {
+                    MiniPlayer(
+                        track = track,
+                        isPlaying = isPlaying,
+                        onPlayPause = player::togglePlayPause,
+                        onExpand = { showNowPlaying = true },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
+            }
+        }
+    }
+
+    // Full-screen Now Playing overlay (expands from mini-player)
+    AnimatedVisibility(
+        visible = showNowPlaying && currentTrack != null,
+        enter = slideInVertically { it },
+        exit = slideOutVertically { it },
+    ) {
+        currentTrack?.let { track ->
+            NowPlayingScreen(
+                track = track,
+                isPlaying = isPlaying,
+                isLiked = isLiked,
+                hasNext = hasNext,
+                hasPrevious = hasPrevious,
+                onPlayPause = player::togglePlayPause,
+                onNext = player::next,
+                onPrevious = player::previous,
+                onToggleLike = player::toggleLikeCurrent,
+                onCollapse = { showNowPlaying = false },
+            )
+        }
+    }
+    }
+}

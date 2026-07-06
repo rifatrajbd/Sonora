@@ -1,0 +1,22 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+# Ignore build output in every module, not just root
+build/
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+/app/release
+*.keystore
+!debug.keystore
+
+# Sonora: never commit source credentials / tokens
+secrets.properties
+*.arl
+
+# build logs / gradle daemon
+build_out.log
+.gradle/

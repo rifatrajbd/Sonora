@@ -1,0 +1,51 @@
+{
+  "configVersion": 1,
+  "notice": null,
+  "sources": [
+    {
+      "type": "YOUTUBE_MUSIC",
+      "enabled": true,
+      "priority": 60
+    },
+    {
+      "type": "QOBUZ",
+      "enabled": true,
+      "priority": 100,
+      "baseUrl": "https://your-squidwtf.example.com",
+      "params": { "region": "us" }
+    },
+    {
+      "type": "TIDAL",
+      "enabled": true,
+      "priority": 90,
+      "baseUrl": "https://your-squidwtf.example.com"
+    },
+    {
+      "type": "AMAZON_MUSIC",
+      "enabled": true,
+      "priority": 80,
+      "baseUrl": "https://your-squidwtf.example.com"
+    },
+    {
+      "type": "APPLE_MUSIC",
+      "enabled": true,
+      "priority": 70,
+      "baseUrl": "https://your-apple-backend.example.com",
+      "params": { "storefront": "us" }
+    },
+    {
+      "type": "JIOSAAVN",
+      "enabled": true,
+      "priority": 50,
+      "baseUrl": "https://your-saavn.example.com"
+    }
+  ],
+  "update": {
+    "min_version_code": 1,
+    "latest_version_code": 1,
+    "latest_version_name": "0.1.0",
+    "apk_url": "https://github.com/CHANGE_ME/sonora/releases/latest/download/sonora.apk",
+    "release_notes": "Initial scaffold.",
+    "mandatory": false
+  }
+}
