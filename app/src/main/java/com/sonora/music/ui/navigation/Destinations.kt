@@ -19,6 +19,7 @@ enum class TopLevelDestination(
 
 object Routes {
     const val NOW_PLAYING = "now_playing"
+    const val EXPLORE = "explore"
     const val SETTINGS = "settings"
     const val ABOUT = "about"
 }

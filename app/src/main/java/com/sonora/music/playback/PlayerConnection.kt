@@ -54,6 +54,22 @@ class PlayerConnection @Inject constructor(
     private val _preferredQuality = MutableStateFlow(AudioQuality.LOSSLESS)
     val preferredQuality: StateFlow<AudioQuality> = _preferredQuality.asStateFlow()
 
+    /** Current playback position in ms, polled while playing (drives synced-lyrics highlight). */
+    private val _positionMs = MutableStateFlow(0L)
+    val positionMs: StateFlow<Long> = _positionMs.asStateFlow()
+
+    private var positionJob: kotlinx.coroutines.Job? = null
+
+    private fun startPositionUpdates() {
+        positionJob?.cancel()
+        positionJob = scope.launch {
+            while (true) {
+                _positionMs.value = controller?.currentPosition ?: 0L
+                kotlinx.coroutines.delay(300)
+            }
+        }
+    }
+
     fun connect() {
         if (controller != null) return
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
@@ -71,6 +87,7 @@ class PlayerConnection @Inject constructor(
                     }
                 })
             }
+            startPositionUpdates()
         }, MoreExecutors.directExecutor())
     }
 
@@ -105,6 +122,8 @@ class PlayerConnection @Inject constructor(
 
     fun setPreferredQuality(quality: AudioQuality) { _preferredQuality.value = quality }
 
+    fun seekTo(ms: Long) { controller?.seekTo(ms) }
+
     private fun playIndex(target: Int) {
         index = target
         val track = queue[target]
@@ -112,16 +131,18 @@ class PlayerConnection @Inject constructor(
         updateNavState()
 
         scope.launch {
-            val stream = runCatching {
-                withContext(Dispatchers.IO) { repository.resolveStream(track, _preferredQuality.value) }
-            }.getOrElse {
+            // Prefer the offline copy when the track has been downloaded.
+            val uri = withContext(Dispatchers.IO) {
+                repository.localPath(track.id)?.let { "file://$it" }
+                    ?: runCatching { repository.resolveStream(track, _preferredQuality.value).url }.getOrNull()
+            } ?: run {
                 // Couldn't resolve this track from any source; skip to the next one.
                 next()
                 return@launch
             }
 
             val item = MediaItem.Builder()
-                .setUri(stream.url)
+                .setUri(uri)
                 .setMediaId(track.id)
                 .setMediaMetadata(
                     MediaMetadata.Builder()

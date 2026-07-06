@@ -13,9 +13,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
+import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
@@ -25,6 +28,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -41,23 +48,29 @@ import com.sonora.music.ui.components.SourceBadge
 
 /**
  * Signature screen: full-bleed blurred artwork → floating art card → (frosted) control bar with
- * quality + source chips. Synced-lyrics panel slot is marked below for v1.
+ * quality + source chips. A lyrics toggle swaps the artwork for the live synced-lyrics panel;
+ * a download toggle saves the track for offline.
  */
 @Composable
 fun NowPlayingScreen(
     track: Track,
     isPlaying: Boolean,
     isLiked: Boolean,
+    isDownloaded: Boolean,
     hasNext: Boolean,
     hasPrevious: Boolean,
+    positionMs: Long,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
     onPrevious: () -> Unit,
     onToggleLike: () -> Unit,
+    onToggleDownload: () -> Unit,
+    onSeek: (Long) -> Unit,
     onCollapse: () -> Unit,
 ) {
+    var showLyrics by remember { mutableStateOf(false) }
+
     Box(Modifier.fillMaxSize()) {
-        // Full-bleed blurred artwork backdrop
         AsyncImage(
             model = track.thumbnailUrl,
             contentDescription = null,
@@ -89,27 +102,54 @@ fun NowPlayingScreen(
                 IconButton(onClick = onCollapse) {
                     Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "Collapse")
                 }
-                IconButton(onClick = onToggleLike) {
-                    Icon(
-                        if (isLiked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
-                        contentDescription = if (isLiked) "Unlike" else "Like",
-                        tint = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    )
+                Row {
+                    IconButton(onClick = { showLyrics = !showLyrics }) {
+                        Icon(
+                            Icons.Rounded.Lyrics,
+                            contentDescription = "Lyrics",
+                            tint = if (showLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    IconButton(onClick = onToggleDownload) {
+                        Icon(
+                            if (isDownloaded) Icons.Rounded.CheckCircle else Icons.Rounded.Download,
+                            contentDescription = if (isDownloaded) "Downloaded" else "Download",
+                            tint = if (isDownloaded) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                    IconButton(onClick = onToggleLike) {
+                        Icon(
+                            if (isLiked) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                            contentDescription = if (isLiked) "Unlike" else "Like",
+                            tint = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
                 }
             }
 
             Spacer(Modifier.height(16.dp))
-            AsyncImage(
-                model = track.thumbnailUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(24.dp)),
-            )
 
-            Spacer(Modifier.height(28.dp))
+            if (showLyrics) {
+                LyricsPanel(
+                    track = track,
+                    positionMs = positionMs,
+                    onSeek = onSeek,
+                    modifier = Modifier.weight(1f),
+                )
+            } else {
+                AsyncImage(
+                    model = track.thumbnailUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(24.dp)),
+                )
+                Spacer(Modifier.weight(1f))
+            }
+
+            Spacer(Modifier.height(20.dp))
             Text(
                 track.title,
                 style = MaterialTheme.typography.headlineMedium,
@@ -128,9 +168,7 @@ fun NowPlayingScreen(
                 SourceBadge(track.source)
             }
 
-            // TODO(v1): synced-lyrics panel (LrcLib) with live-highlighted current line.
-
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(20.dp))
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,

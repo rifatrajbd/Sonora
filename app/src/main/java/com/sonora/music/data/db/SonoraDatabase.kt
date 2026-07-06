@@ -40,6 +40,15 @@ interface SongDao {
 
     @Query("SELECT EXISTS(SELECT 1 FROM songs WHERE id = :id AND liked = 1)")
     fun isLiked(id: String): Flow<Boolean>
+
+    @Query("UPDATE songs SET downloaded = :downloaded, localPath = :path WHERE id = :id")
+    suspend fun setDownloaded(id: String, downloaded: Boolean, path: String?)
+
+    @Query("SELECT EXISTS(SELECT 1 FROM songs WHERE id = :id AND downloaded = 1)")
+    fun isDownloaded(id: String): Flow<Boolean>
+
+    @Query("SELECT localPath FROM songs WHERE id = :id AND downloaded = 1 LIMIT 1")
+    suspend fun localPath(id: String): String?
 }
 
 @Dao

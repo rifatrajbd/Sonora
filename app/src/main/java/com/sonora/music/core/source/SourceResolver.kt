@@ -2,6 +2,7 @@ package com.sonora.music.core.source
 
 import android.util.Log
 import com.sonora.music.core.model.AudioQuality
+import com.sonora.music.core.model.HomeSection
 import com.sonora.music.core.model.SearchResults
 import com.sonora.music.core.model.SourceType
 import com.sonora.music.core.model.StreamInfo
@@ -40,6 +41,13 @@ class SourceResolver @Inject constructor(
             albums = results.flatMap { it.albums },
             artists = results.flatMap { it.artists },
         )
+    }
+
+    /** Aggregate Home rows from every enabled source (highest-priority source first). */
+    suspend fun homeFeed(): List<HomeSection> = coroutineScope {
+        active.map { source ->
+            async { runCatching { source.getHome() }.getOrDefault(emptyList()) }
+        }.awaitAll().flatten()
     }
 
     /**

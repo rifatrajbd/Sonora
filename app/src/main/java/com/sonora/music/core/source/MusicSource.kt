@@ -1,6 +1,7 @@
 package com.sonora.music.core.source
 
 import com.sonora.music.core.model.AudioQuality
+import com.sonora.music.core.model.HomeSection
 import com.sonora.music.core.model.Lyrics
 import com.sonora.music.core.model.SearchResults
 import com.sonora.music.core.model.SourceType
@@ -27,6 +28,9 @@ interface MusicSource {
     val priority: Int
 
     suspend fun search(query: String): SearchResults
+
+    /** Optional home/discovery rows for this source. Default: none. */
+    suspend fun getHome(): List<HomeSection> = emptyList()
 
     /**
      * Resolve a playable stream for [track] at the closest available quality to [preferred].

@@ -70,6 +70,20 @@ class JioSaavnSource @Inject constructor(
         SearchResults(tracks = results)
     }
 
+    override suspend fun getHome(): List<com.sonora.music.core.model.HomeSection> {
+        // Build a lightweight home feed from a few seed queries (works without a fragile
+        // provider-specific "modules" schema). Swap for a real home endpoint later.
+        val seeds = listOf(
+            "Trending" to "top hits",
+            "New Releases" to "new songs",
+            "Chill" to "lofi chill",
+        )
+        return seeds.mapNotNull { (title, query) ->
+            val tracks = runCatching { search(query).tracks.take(12) }.getOrDefault(emptyList())
+            if (tracks.isEmpty()) null else com.sonora.music.core.model.HomeSection(title, tracks)
+        }
+    }
+
     override suspend fun getStream(track: Track, preferred: AudioQuality): StreamInfo =
         withContext(Dispatchers.IO) {
             val body = get("$baseUrl/api/songs/${track.sourceId}") ?: error("JioSaavn: empty response")

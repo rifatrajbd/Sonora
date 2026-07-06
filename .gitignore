@@ -20,3 +20,4 @@ secrets.properties
 # build logs / gradle daemon
 build_out.log
 .gradle/
+build_*.log

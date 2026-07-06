@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Sonora launcher icon — "Waveform" (concept 02).
-  Six pill bars, bottom-aligned to y=86, rising then falling, in a coral->amber sweep.
-  Bars span x 19..87 within the adaptive-icon safe zone (central ~66dp of 108).
-  Each bar is width 8, radius 4 (stadium ends); colours sampled along the brand gradient.
+  Sonora launcher icon foreground: white beamed music note (♫) with a soft offset shadow,
+  matching the provided logo. Sized within the adaptive-icon safe zone (central ~66dp of 108).
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -11,10 +9,19 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <path android:fillColor="#FF6A47" android:pathData="M19,74 a4,4 0 0 1 8,0 v8 a4,4 0 0 1 -8,0 v-8 z" />
-    <path android:fillColor="#FF7A55" android:pathData="M31,60 a4,4 0 0 1 8,0 v22 a4,4 0 0 1 -8,0 v-22 z" />
-    <path android:fillColor="#FF8A5E" android:pathData="M43,38 a4,4 0 0 1 8,0 v44 a4,4 0 0 1 -8,0 v-44 z" />
-    <path android:fillColor="#FF9A63" android:pathData="M55,24 a4,4 0 0 1 8,0 v58 a4,4 0 0 1 -8,0 v-58 z" />
-    <path android:fillColor="#FFA967" android:pathData="M67,50 a4,4 0 0 1 8,0 v32 a4,4 0 0 1 -8,0 v-32 z" />
-    <path android:fillColor="#FFB86B" android:pathData="M79,70 a4,4 0 0 1 8,0 v12 a4,4 0 0 1 -8,0 v-12 z" />
+    <!-- Soft shadow (offset down-right), semi-transparent dark teal -->
+    <group android:translateX="3" android:translateY="4">
+        <path android:fillColor="#33005A55" android:pathData="M50,40 h5 v31 h-5 z" />
+        <path android:fillColor="#33005A55" android:pathData="M81,30 h5 v30 h-5 z" />
+        <path android:fillColor="#33005A55" android:pathData="M50,31 L86,21 L86,33 L50,43 Z" />
+        <path android:fillColor="#33005A55" android:pathData="M35,71 a11,9 0 1 0 22,0 a11,9 0 1 0 -22,0 z" />
+        <path android:fillColor="#33005A55" android:pathData="M66,61 a11,9 0 1 0 22,0 a11,9 0 1 0 -22,0 z" />
+    </group>
+
+    <!-- White note -->
+    <path android:fillColor="#FFF7FBFB" android:pathData="M50,40 h5 v31 h-5 z" />
+    <path android:fillColor="#FFF7FBFB" android:pathData="M81,30 h5 v30 h-5 z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M50,31 L86,21 L86,33 L50,43 Z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M35,71 a11,9 0 1 0 22,0 a11,9 0 1 0 -22,0 z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M66,61 a11,9 0 1 0 22,0 a11,9 0 1 0 -22,0 z" />
 </vector>

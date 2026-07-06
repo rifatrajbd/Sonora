@@ -33,6 +33,7 @@ import com.sonora.music.ui.PlayerViewModel
 import com.sonora.music.ui.components.MiniPlayer
 import com.sonora.music.ui.navigation.Routes
 import com.sonora.music.ui.navigation.TopLevelDestination
+import com.sonora.music.ui.screens.explore.ExploreScreen
 import com.sonora.music.ui.screens.home.HomeScreen
 import com.sonora.music.ui.screens.library.LibraryScreen
 import com.sonora.music.ui.screens.player.NowPlayingScreen
@@ -49,20 +50,22 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SonoraTheme {
-                SonoraApp()
+                SonoraRoot()
             }
         }
     }
 }
 
 @Composable
-private fun SonoraApp(player: PlayerViewModel = hiltViewModel()) {
+private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
     val navController = rememberNavController()
     val currentTrack by player.currentTrack.collectAsStateWithLifecycle()
     val isPlaying by player.isPlaying.collectAsStateWithLifecycle()
     val isLiked by player.currentIsLiked.collectAsStateWithLifecycle()
+    val isDownloaded by player.currentIsDownloaded.collectAsStateWithLifecycle()
     val hasNext by player.hasNext.collectAsStateWithLifecycle()
     val hasPrevious by player.hasPrevious.collectAsStateWithLifecycle()
+    val positionMs by player.positionMs.collectAsStateWithLifecycle()
     var showNowPlaying by remember { mutableStateOf(false) }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -94,13 +97,23 @@ private fun SonoraApp(player: PlayerViewModel = hiltViewModel()) {
         Box(Modifier.fillMaxSize().padding(padding)) {
             NavHost(navController = navController, startDestination = TopLevelDestination.HOME.route) {
                 composable(TopLevelDestination.HOME.route) {
-                    HomeScreen(onOpenSettings = { navController.navigate(Routes.SETTINGS) })
+                    HomeScreen(
+                        onPlay = { track, queue -> player.play(track, queue) },
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                        onOpenExplore = { navController.navigate(Routes.EXPLORE) },
+                    )
                 }
                 composable(TopLevelDestination.SEARCH.route) {
                     SearchScreen(onPlay = { track, queue -> player.play(track, queue) })
                 }
                 composable(TopLevelDestination.LIBRARY.route) {
                     LibraryScreen(onPlay = { track, queue -> player.play(track, queue) })
+                }
+                composable(Routes.EXPLORE) {
+                    ExploreScreen(
+                        onPlay = { track, queue -> player.play(track, queue) },
+                        onBack = { navController.popBackStack() },
+                    )
                 }
                 composable(Routes.SETTINGS) {
                     SettingsScreen(
@@ -141,12 +154,16 @@ private fun SonoraApp(player: PlayerViewModel = hiltViewModel()) {
                 track = track,
                 isPlaying = isPlaying,
                 isLiked = isLiked,
+                isDownloaded = isDownloaded,
                 hasNext = hasNext,
                 hasPrevious = hasPrevious,
+                positionMs = positionMs,
                 onPlayPause = player::togglePlayPause,
                 onNext = player::next,
                 onPrevious = player::previous,
                 onToggleLike = player::toggleLikeCurrent,
+                onToggleDownload = player::toggleDownloadCurrent,
+                onSeek = player::seekTo,
                 onCollapse = { showNowPlaying = false },
             )
         }

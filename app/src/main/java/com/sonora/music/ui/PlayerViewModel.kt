@@ -24,18 +24,22 @@ class PlayerViewModel @Inject constructor(
     val isPlaying: StateFlow<Boolean> = playerConnection.isPlaying
     val hasNext: StateFlow<Boolean> = playerConnection.hasNext
     val hasPrevious: StateFlow<Boolean> = playerConnection.hasPrevious
+    val positionMs: StateFlow<Long> = playerConnection.positionMs
 
-    /** Whether the currently playing track is liked (drives the heart toggle). */
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val currentIsLiked: StateFlow<Boolean> = currentTrack
         .flatMapLatest { track -> track?.let { repository.isLiked(it.id) } ?: flowOf(false) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val currentIsDownloaded: StateFlow<Boolean> = currentTrack
+        .flatMapLatest { track -> track?.let { repository.isDownloaded(it.id) } ?: flowOf(false) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     init {
         playerConnection.connect()
     }
 
-    /** Play [track] within the context of [queue] (e.g. the full search result list). */
     fun play(track: Track, queue: List<Track> = listOf(track)) {
         val start = queue.indexOfFirst { it.id == track.id }.takeIf { it >= 0 } ?: 0
         playerConnection.setQueue(queue, start)
@@ -44,9 +48,15 @@ class PlayerViewModel @Inject constructor(
     fun togglePlayPause() = playerConnection.togglePlayPause()
     fun next() = playerConnection.next()
     fun previous() = playerConnection.previous()
+    fun seekTo(ms: Long) = playerConnection.seekTo(ms)
 
     fun toggleLikeCurrent() {
         val track = currentTrack.value ?: return
         viewModelScope.launch { repository.toggleLike(track) }
+    }
+
+    fun toggleDownloadCurrent() {
+        val track = currentTrack.value ?: return
+        viewModelScope.launch { repository.toggleDownload(track) }
     }
 }
