@@ -36,7 +36,9 @@ import com.sonora.music.ui.navigation.TopLevelDestination
 import com.sonora.music.ui.screens.explore.ExploreScreen
 import com.sonora.music.ui.screens.home.HomeScreen
 import com.sonora.music.ui.screens.library.LibraryScreen
+import com.sonora.music.ui.screens.offline.OfflineScreen
 import com.sonora.music.ui.screens.player.NowPlayingScreen
+import androidx.compose.runtime.LaunchedEffect
 import com.sonora.music.ui.screens.search.SearchScreen
 import androidx.compose.foundation.isSystemInDarkTheme
 import com.sonora.music.data.settings.ThemeMode
@@ -80,16 +82,28 @@ private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
     val isPlaying by player.isPlaying.collectAsStateWithLifecycle()
     val isLiked by player.currentIsLiked.collectAsStateWithLifecycle()
     val isDownloaded by player.currentIsDownloaded.collectAsStateWithLifecycle()
+    val isDownloading by player.currentIsDownloading.collectAsStateWithLifecycle()
     val hasNext by player.hasNext.collectAsStateWithLifecycle()
     val hasPrevious by player.hasPrevious.collectAsStateWithLifecycle()
     val positionMs by player.positionMs.collectAsStateWithLifecycle()
     val repeatMode by player.repeatMode.collectAsStateWithLifecycle()
     val sleepEndMs by player.sleepTimerEndMs.collectAsStateWithLifecycle()
+    val isOnline by player.isOnline.collectAsStateWithLifecycle()
     var showNowPlaying by remember { mutableStateOf(false) }
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val isTopLevel = TopLevelDestination.entries.any { it.route == currentRoute }
+
+    // Auto-switch to the Offline tab when the connection drops.
+    LaunchedEffect(isOnline) {
+        if (!isOnline && currentRoute != TopLevelDestination.OFFLINE.route) {
+            navController.navigate(TopLevelDestination.OFFLINE.route) {
+                popUpTo(TopLevelDestination.HOME.route)
+                launchSingleTop = true
+            }
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
     Scaffold(
@@ -127,6 +141,9 @@ private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
                 }
                 composable(TopLevelDestination.LIBRARY.route) {
                     LibraryScreen(onPlay = { track, queue -> player.play(track, queue) })
+                }
+                composable(TopLevelDestination.OFFLINE.route) {
+                    OfflineScreen(onPlay = { track, queue -> player.play(track, queue) }, isOnline = isOnline)
                 }
                 composable(Routes.EXPLORE) {
                     ExploreScreen(
@@ -186,6 +203,7 @@ private fun SonoraRoot(player: PlayerViewModel = hiltViewModel()) {
                 isPlaying = isPlaying,
                 isLiked = isLiked,
                 isDownloaded = isDownloaded,
+                isDownloading = isDownloading,
                 hasNext = hasNext,
                 hasPrevious = hasPrevious,
                 positionMs = positionMs,

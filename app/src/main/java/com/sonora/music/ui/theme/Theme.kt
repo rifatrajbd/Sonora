@@ -8,12 +8,13 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val SonoraDark = darkColorScheme(
-    primary = SonoraCoral,
+    primary = SonoraTeal,
     onPrimary = Ink,
-    secondary = SonoraAmber,
+    secondary = SonoraCyan,
     background = Ink,
     onBackground = OnInk,
     surface = InkElevated,
@@ -23,8 +24,9 @@ private val SonoraDark = darkColorScheme(
 )
 
 private val SonoraLight = lightColorScheme(
-    primary = SonoraCoral,
-    secondary = SonoraAmber,
+    primary = SonoraTealDeep,
+    onPrimary = Color.White,
+    secondary = SonoraTeal,
     background = Paper,
     onBackground = OnPaper,
     surface = Paper,

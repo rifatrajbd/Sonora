@@ -18,8 +18,10 @@ import javax.inject.Inject
 class PlayerViewModel @Inject constructor(
     private val playerConnection: PlayerConnection,
     private val repository: MusicRepository,
+    networkMonitor: com.sonora.music.core.NetworkMonitor,
 ) : ViewModel() {
 
+    val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
     val currentTrack: StateFlow<Track?> = playerConnection.currentTrack
     val isPlaying: StateFlow<Boolean> = playerConnection.isPlaying
     val hasNext: StateFlow<Boolean> = playerConnection.hasNext
@@ -36,6 +38,11 @@ class PlayerViewModel @Inject constructor(
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val currentIsDownloaded: StateFlow<Boolean> = currentTrack
         .flatMapLatest { track -> track?.let { repository.isDownloaded(it.id) } ?: flowOf(false) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val currentIsDownloading: StateFlow<Boolean> = kotlinx.coroutines.flow.combine(
+        currentTrack, repository.downloadsInProgress,
+    ) { track, inProgress -> track != null && track.id in inProgress }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     init {

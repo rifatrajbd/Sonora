@@ -1,6 +1,9 @@
 package com.sonora.music.ui.screens.player
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +49,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,6 +65,7 @@ fun NowPlayingScreen(
     isPlaying: Boolean,
     isLiked: Boolean,
     isDownloaded: Boolean,
+    isDownloading: Boolean,
     hasNext: Boolean,
     hasPrevious: Boolean,
     positionMs: Long,
@@ -106,17 +112,40 @@ fun NowPlayingScreen(
             }
 
             Spacer(Modifier.height(8.dp))
-            if (showLyrics) {
-                LyricsPanel(track = track, positionMs = positionMs, onSeek = onSeek, modifier = Modifier.weight(1f))
-            } else {
-                AsyncImage(
-                    model = track.thumbnailUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(24.dp)),
-                )
-                Spacer(Modifier.weight(1f))
+            // Tap the artwork to flip it over and reveal the lyrics (and back).
+            val rotation by animateFloatAsState(if (showLyrics) 180f else 0f, tween(500), label = "flip")
+            val density = LocalDensity.current
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .graphicsLayer {
+                        rotationY = rotation
+                        cameraDistance = 14f * density.density
+                    }
+                    .clip(RoundedCornerShape(24.dp))
+                    .clickable { showLyrics = !showLyrics },
+            ) {
+                if (rotation <= 90f) {
+                    AsyncImage(
+                        model = track.thumbnailUrl,
+                        contentDescription = "Tap for lyrics",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    // Back face — counter-rotate so text isn't mirrored.
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { rotationY = 180f }
+                            .background(MaterialTheme.colorScheme.surface),
+                    ) {
+                        LyricsPanel(track = track, positionMs = positionMs, onSeek = onSeek, modifier = Modifier.fillMaxSize())
+                    }
+                }
             }
+            Spacer(Modifier.weight(1f))
 
             Spacer(Modifier.height(16.dp))
             Text(
@@ -195,12 +224,20 @@ fun NowPlayingScreen(
                 IconButton(onClick = { showLyrics = !showLyrics }) {
                     Icon(Icons.Rounded.Lyrics, contentDescription = "Lyrics", tint = if (showLyrics) accent else MaterialTheme.colorScheme.onSurface)
                 }
-                IconButton(onClick = onToggleDownload) {
-                    Icon(
-                        if (isDownloaded) Icons.Rounded.CheckCircle else Icons.Rounded.Download,
-                        contentDescription = "Download",
-                        tint = if (isDownloaded) accent else MaterialTheme.colorScheme.onSurface,
-                    )
+                IconButton(onClick = onToggleDownload, enabled = !isDownloading) {
+                    if (isDownloading) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            strokeWidth = 2.dp,
+                            color = accent,
+                        )
+                    } else {
+                        Icon(
+                            if (isDownloaded) Icons.Rounded.CheckCircle else Icons.Rounded.Download,
+                            contentDescription = if (isDownloaded) "Downloaded" else "Download",
+                            tint = if (isDownloaded) accent else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
                 }
                 IconButton(onClick = onToggleLike) {
                     Icon(

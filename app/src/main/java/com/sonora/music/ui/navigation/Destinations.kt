@@ -1,6 +1,7 @@
 package com.sonora.music.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DownloadForOffline
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.Search
@@ -15,6 +16,7 @@ enum class TopLevelDestination(
     HOME("home", "Home", Icons.Rounded.Home),
     SEARCH("search", "Search", Icons.Rounded.Search),
     LIBRARY("library", "Library", Icons.Rounded.LibraryMusic),
+    OFFLINE("offline", "Offline", Icons.Rounded.DownloadForOffline),
 }
 
 object Routes {
