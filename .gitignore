@@ -21,3 +21,6 @@ secrets.properties
 build_out.log
 .gradle/
 build_*.log
+
+# Kotlin incremental compile cache
+.kotlin/

@@ -33,7 +33,9 @@ object AppModule {
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
+            // Log only in debug: release logging burns CPU (and battery) on every request.
+            level = if (com.sonora.music.BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC
+            else HttpLoggingInterceptor.Level.NONE
         })
         // A realistic UA reduces trivial blocking by the reverse-engineered backends.
         .addInterceptor { chain ->
@@ -69,6 +71,7 @@ object AppModule {
     }
 
     @Provides fun songDao(db: SonoraDatabase): SongDao = db.songDao()
+    @Provides fun lyricsDao(db: SonoraDatabase): com.sonora.music.data.db.LyricsDao = db.lyricsDao()
     @Provides fun playlistDao(db: SonoraDatabase): PlaylistDao = db.playlistDao()
     @Provides fun historyDao(db: SonoraDatabase): com.sonora.music.data.db.HistoryDao = db.historyDao()
 }

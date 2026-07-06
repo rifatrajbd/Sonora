@@ -81,14 +81,21 @@ class PlayerConnection @Inject constructor(
 
     private var positionJob: kotlinx.coroutines.Job? = null
 
+    /** Poll only while actually playing — a forever-loop here was a steady battery drain. */
     private fun startPositionUpdates() {
-        positionJob?.cancel()
+        if (positionJob?.isActive == true) return
         positionJob = scope.launch {
-            while (true) {
+            while (controller?.isPlaying == true) {
                 _positionMs.value = controller?.currentPosition ?: 0L
-                kotlinx.coroutines.delay(300)
+                kotlinx.coroutines.delay(400)
             }
         }
+    }
+
+    private fun stopPositionUpdates() {
+        positionJob?.cancel()
+        positionJob = null
+        _positionMs.value = controller?.currentPosition ?: 0L
     }
 
     fun connect() {
@@ -100,7 +107,12 @@ class PlayerConnection @Inject constructor(
                 c.addListener(object : Player.Listener {
                     override fun onIsPlayingChanged(playing: Boolean) {
                         _isPlaying.value = playing
-                        if (playing) { consecutiveFailures = 0; _error.value = null }
+                        if (playing) {
+                            consecutiveFailures = 0; _error.value = null
+                            startPositionUpdates()
+                        } else {
+                            stopPositionUpdates()
+                        }
                     }
 
                     override fun onPlaybackStateChanged(state: Int) {
@@ -121,7 +133,6 @@ class PlayerConnection @Inject constructor(
                     }
                 })
             }
-            startPositionUpdates()
         }, MoreExecutors.directExecutor())
     }
 
@@ -162,7 +173,10 @@ class PlayerConnection @Inject constructor(
 
     fun setPreferredQuality(quality: AudioQuality) { _preferredQuality.value = quality }
 
-    fun seekTo(ms: Long) { controller?.seekTo(ms) }
+    fun seekTo(ms: Long) {
+        controller?.seekTo(ms)
+        _positionMs.value = ms // reflect immediately even while paused (no polling then)
+    }
 
     /** Cycle repeat: off -> all -> one -> off. */
     fun cycleRepeatMode() { _repeatMode.value = (_repeatMode.value + 1) % 3 }
@@ -179,19 +193,29 @@ class PlayerConnection @Inject constructor(
         }
     }
 
+    /**
+     * Monotonic id per playIndex call. Stream URLs resolve asynchronously; when the user skips
+     * quickly, a slow older resolution could land *after* the newer one and set the player (and
+     * its notification) to a different song than the UI shows. Stale generations bail out.
+     */
+    private var playGeneration = 0L
+
     private fun playIndex(target: Int) {
         index = target
         _currentIndex.value = target
         val track = queue[target]
         _currentTrack.value = track
         updateNavState()
+        val generation = ++playGeneration
 
         scope.launch {
             // Prefer the offline copy when the track has been downloaded.
             val uri = withContext(Dispatchers.IO) {
                 repository.localPath(track.id)?.let { "file://$it" }
                     ?: runCatching { repository.resolveStream(track, _preferredQuality.value).url }.getOrNull()
-            } ?: run {
+            }
+            if (generation != playGeneration) return@launch // user already moved on
+            if (uri == null) {
                 // Couldn't resolve a stream from any enabled source.
                 onTrackFailed("Couldn't find a playable source for \"${track.title}\"")
                 return@launch

@@ -73,6 +73,20 @@ data class PlayEventEntity(
 /** Aggregated top-artist row for the stats screen. */
 data class ArtistPlays(val artistName: String, val plays: Int)
 
+/**
+ * Cached lyrics per song (InnerTune-style): fetched once from the network, then served from disk
+ * forever. [content] is the raw LRC (synced) or plain text; empty content marks a confirmed miss
+ * so we don't re-hit the API on every open.
+ */
+@Entity(tableName = "lyrics")
+data class LyricsEntity(
+    @PrimaryKey val songId: String,
+    val content: String,
+    val synced: Boolean,
+    val sourceName: String,
+    val fetchedAt: Long = System.currentTimeMillis(),
+)
+
 @Entity(tableName = "playlists")
 data class PlaylistEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

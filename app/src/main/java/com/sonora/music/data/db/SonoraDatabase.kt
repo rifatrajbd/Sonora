@@ -85,6 +85,18 @@ interface HistoryDao {
 }
 
 @Dao
+interface LyricsDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(lyrics: LyricsEntity)
+
+    @Query("SELECT * FROM lyrics WHERE songId = :songId LIMIT 1")
+    suspend fun byId(songId: String): LyricsEntity?
+
+    @Query("DELETE FROM lyrics")
+    suspend fun clear()
+}
+
+@Dao
 interface PlaylistDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun create(playlist: PlaylistEntity): Long
@@ -103,8 +115,8 @@ interface PlaylistDao {
 }
 
 @Database(
-    entities = [SongEntity::class, PlayEventEntity::class, PlaylistEntity::class, PlaylistSongCrossRef::class],
-    version = 2,
+    entities = [SongEntity::class, PlayEventEntity::class, PlaylistEntity::class, PlaylistSongCrossRef::class, LyricsEntity::class],
+    version = 3,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -112,10 +124,23 @@ abstract class SonoraDatabase : RoomDatabase() {
     abstract fun songDao(): SongDao
     abstract fun historyDao(): HistoryDao
     abstract fun playlistDao(): PlaylistDao
+    abstract fun lyricsDao(): LyricsDao
 
     companion object {
+        /** v2 -> v3: lyrics cache table. Non-destructive so the library survives the upgrade. */
+        private val MIGRATION_2_3 = object : androidx.room.migration.Migration(2, 3) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS lyrics (" +
+                        "songId TEXT NOT NULL PRIMARY KEY, content TEXT NOT NULL, " +
+                        "synced INTEGER NOT NULL, sourceName TEXT NOT NULL, fetchedAt INTEGER NOT NULL)"
+                )
+            }
+        }
+
         fun build(context: Context): SonoraDatabase =
             Room.databaseBuilder(context, SonoraDatabase::class.java, "sonora.db")
+                .addMigrations(MIGRATION_2_3)
                 .fallbackToDestructiveMigration()
                 .build()
     }

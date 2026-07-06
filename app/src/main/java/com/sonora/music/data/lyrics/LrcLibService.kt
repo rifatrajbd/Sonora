@@ -4,12 +4,15 @@ import com.sonora.music.core.model.LyricLine
 import com.sonora.music.core.model.Lyrics
 import com.sonora.music.core.model.Track
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,27 +20,40 @@ import javax.inject.Singleton
  * Synchronised lyrics from LrcLib (https://lrclib.net) — a free, open, no-auth lyrics API.
  * Provider-agnostic: works for a track from any source, matched on title + artist (+ album,
  * duration when available for a better hit). Returns synced LRC when available, else plain text.
+ *
+ * The exact `get` and the fuzzy `search` are fired in parallel with a short call timeout, so a
+ * miss on the exact endpoint doesn't serialise into a second round-trip.
  */
 @Singleton
 class LrcLibService @Inject constructor(
-    private val client: OkHttpClient,
+    client: OkHttpClient,
     private val json: Json,
 ) {
+    // Lyrics are a nice-to-have: cap the whole call so a slow API never blocks the panel long.
+    private val client = client.newBuilder()
+        .callTimeout(8, TimeUnit.SECONDS)
+        .connectTimeout(5, TimeUnit.SECONDS)
+        .build()
+
     suspend fun fetch(track: Track): Lyrics? = withContext(Dispatchers.IO) {
-        val url = buildString {
+        val getUrl = buildString {
             append("https://lrclib.net/api/get?")
             append("track_name=").append(track.title.enc())
             append("&artist_name=").append(track.artistName.enc())
             track.albumTitle?.let { append("&album_name=").append(it.enc()) }
             if (track.durationMs > 0) append("&duration=").append(track.durationMs / 1000)
         }
-        val body = get(url) ?: run {
-            // Fall back to fuzzy search if the exact get() misses.
-            get("https://lrclib.net/api/search?track_name=${track.title.enc()}&artist_name=${track.artistName.enc()}")
-                ?.let { firstFromSearch(it) }
-        } ?: return@withContext null
+        val searchUrl =
+            "https://lrclib.net/api/search?track_name=${track.title.enc()}&artist_name=${track.artistName.enc()}"
 
-        parse(body)
+        // Race both endpoints; prefer the exact hit, fall back to the first search result.
+        coroutineScope {
+            val exact = async { get(getUrl) }
+            val fuzzy = async { get(searchUrl)?.let { firstFromSearch(it) } }
+            val body = exact.await() ?: fuzzy.await() ?: return@coroutineScope null
+            fuzzy.cancel()
+            parse(body)
+        }
     }
 
     private fun parse(body: String): Lyrics? {
@@ -45,9 +61,9 @@ class LrcLibService @Inject constructor(
         val synced = obj["syncedLyrics"]?.jsonPrimitive?.contentOrNull()
         val plain = obj["plainLyrics"]?.jsonPrimitive?.contentOrNull()
         return when {
-            !synced.isNullOrBlank() -> Lyrics(parseLrc(synced), synced = true, sourceName = "LrcLib")
+            !synced.isNullOrBlank() -> Lyrics(parseLrc(synced), synced = true, sourceName = "LrcLib", raw = synced)
             !plain.isNullOrBlank() -> Lyrics(
-                plain.lines().map { LyricLine(-1, it) }, synced = false, sourceName = "LrcLib",
+                plain.lines().map { LyricLine(-1, it) }, synced = false, sourceName = "LrcLib", raw = plain,
             )
             else -> null
         }
@@ -60,9 +76,10 @@ class LrcLibService @Inject constructor(
         first.toString()
     }.getOrNull()
 
-    private fun get(url: String): String? =
+    private fun get(url: String): String? = runCatching {
         client.newCall(Request.Builder().url(url).header("User-Agent", "Sonora").build())
             .execute().use { if (it.isSuccessful) it.body?.string() else null }
+    }.getOrNull()
 
     private fun String.enc() = java.net.URLEncoder.encode(this, "UTF-8")
     private fun kotlinx.serialization.json.JsonPrimitive.contentOrNull(): String? =

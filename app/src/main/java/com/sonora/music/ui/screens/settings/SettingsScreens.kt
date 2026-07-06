@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +35,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sonora.music.core.model.AudioQuality
 import com.sonora.music.core.model.SourceType
+import com.sonora.music.data.settings.ContentLocales
 import com.sonora.music.data.settings.DefaultTab
 import com.sonora.music.data.settings.LyricsPosition
 import com.sonora.music.data.settings.LyricsProvider
@@ -94,22 +96,93 @@ fun AppearanceScreen(onBack: () -> Unit, vm: SettingsViewModel = hiltViewModel()
 @Composable
 fun ContentScreen(onBack: () -> Unit, vm: SettingsViewModel = hiltViewModel()) {
     val s by vm.settings.collectAsStateWithLifecycle()
+    var pickLanguage by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var pickCountry by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
     SettingsScaffold("Content", onBack) { mod ->
         Column(mod.padding(bottom = 24.dp)) {
-            SectionLabel("Default content language")
-            OutlinedTextField(
-                value = s.contentLanguage, onValueChange = vm::setContentLanguage, singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            )
-            SectionLabel("Default content country")
-            OutlinedTextField(
-                value = s.contentCountry, onValueChange = vm::setContentCountry, singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            SectionLabel("Content preferences")
+            PickerRow(
+                title = "Default content language",
+                value = ContentLocales.languageName(s.contentLanguage) ?: "System default",
+            ) { pickLanguage = true }
+            PickerRow(
+                title = "Default content country",
+                value = ContentLocales.countryName(s.contentCountry) ?: "System default",
+            ) { pickCountry = true }
+            Text(
+                "Used for trending music and search results. Changes apply on the next refresh.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             SwitchRow("Hide explicit", "Hide content marked as explicit", s.hideExplicit, vm::setHideExplicit)
         }
     }
+
+    if (pickLanguage) {
+        LocalePickerDialog(
+            title = "Content language",
+            options = ContentLocales.LANGUAGES,
+            selected = s.contentLanguage,
+            onPick = { vm.setContentLanguage(it); pickLanguage = false },
+            onDismiss = { pickLanguage = false },
+        )
+    }
+    if (pickCountry) {
+        LocalePickerDialog(
+            title = "Content country",
+            options = ContentLocales.COUNTRIES,
+            selected = s.contentCountry,
+            onPick = { vm.setContentCountry(it); pickCountry = false },
+            onDismiss = { pickCountry = false },
+        )
+    }
+}
+
+@Composable
+private fun PickerRow(title: String, value: String, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+    }
+}
+
+@Composable
+private fun LocalePickerDialog(
+    title: String,
+    options: List<Pair<String, String>>,
+    selected: String,
+    onPick: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            androidx.compose.foundation.lazy.LazyColumn(Modifier.fillMaxWidth()) {
+                item {
+                    RadioRow(
+                        "System default",
+                        selected = options.none { it.first == selected },
+                    ) { onPick(ContentLocales.SYSTEM_DEFAULT) }
+                }
+                items(options.size) { i ->
+                    val (code, name) = options[i]
+                    RadioRow(name, selected = code == selected) { onPick(code) }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }
 
 // ---------------- Player and audio ----------------

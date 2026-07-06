@@ -64,6 +64,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.sonora.music.core.model.Track
 import com.sonora.music.ui.components.QualityChip
@@ -77,7 +78,7 @@ fun NowPlayingScreen(
     isDownloading: Boolean,
     hasNext: Boolean,
     hasPrevious: Boolean,
-    positionMs: Long,
+    positionFlow: kotlinx.coroutines.flow.StateFlow<Long>,
     repeatMode: Int,
     sleepActive: Boolean,
     queue: List<Track>,
@@ -98,7 +99,14 @@ fun NowPlayingScreen(
     var showSleepDialog by remember { mutableStateOf(false) }
     var showQueue by remember { mutableStateOf(false) }
     val accent = MaterialTheme.colorScheme.primary
+    // Collected here (not at the app root) so only this screen recomposes with playback progress.
+    val positionMs by positionFlow.collectAsStateWithLifecycle()
 
+    // This overlay isn't inside a Surface, so LocalContentColor would default to black —
+    // making the title invisible on the dark blurred background. Provide it explicitly.
+    androidx.compose.runtime.CompositionLocalProvider(
+        androidx.compose.material3.LocalContentColor provides MaterialTheme.colorScheme.onBackground,
+    ) {
     Box(
         Modifier
             .fillMaxSize()
@@ -171,6 +179,7 @@ fun NowPlayingScreen(
             Text(
                 track.title,
                 style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
             )
             Text(
@@ -301,6 +310,7 @@ fun NowPlayingScreen(
                 Text("Up next", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp))
             }
         }
+    }
     }
 
     if (showQueue) {

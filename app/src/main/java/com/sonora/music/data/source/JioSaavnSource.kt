@@ -86,14 +86,33 @@ class JioSaavnSource @Inject constructor(
         }.getOrNull()
     }
 
+    /** Artist-name search for the onboarding picker. */
+    suspend fun searchArtistNames(query: String, limit: Int = 8): List<String> = withContext(Dispatchers.IO) {
+        val body = get("$baseUrl/api/search/artists?query=${query.encode()}&limit=$limit")
+            ?: return@withContext emptyList()
+        runCatching {
+            val results = json.parseToJsonElement(body).jsonObject["data"]?.jsonObject?.get("results")?.jsonArray
+            results?.mapNotNull { it.jsonObject["name"]?.jsonPrimitive?.content?.decodeHtml() }.orEmpty()
+        }.getOrDefault(emptyList())
+    }
+
     override suspend fun getHome(): List<com.sonora.music.core.model.HomeSection> {
         // Build a lightweight home feed from a few seed queries (works without a fragile
-        // provider-specific "modules" schema). Swap for a real home endpoint later.
-        val seeds = listOf(
-            "Trending" to "top hits",
-            "New Releases" to "new songs",
-            "Chill" to "lofi chill",
-        )
+        // provider-specific "modules" schema), biased by the Content language/country settings.
+        val s = settings.settings.value
+        val lang = com.sonora.music.data.settings.ContentLocales.languageName(s.contentLanguage)
+        val country = com.sonora.music.data.settings.ContentLocales.countryName(s.contentCountry)
+        val seeds = buildList {
+            if (lang != null) {
+                add("Trending in $lang" to "$lang top hits")
+                add("New $lang Releases" to "new $lang songs")
+            } else {
+                add("Trending" to "top hits")
+                add("New Releases" to "new songs")
+            }
+            if (country != null) add("Popular in $country" to "$country top songs")
+            add("Chill" to "lofi chill")
+        }
         return seeds.mapNotNull { (title, query) ->
             val tracks = runCatching { search(query).tracks.take(12) }.getOrDefault(emptyList())
             if (tracks.isEmpty()) null else com.sonora.music.core.model.HomeSection(title, tracks)

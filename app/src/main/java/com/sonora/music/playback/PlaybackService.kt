@@ -57,8 +57,19 @@ class PlaybackService : MediaSessionService() {
 
         exo.skipSilenceEnabled = settings.settings.value.skipSilence
 
+        // Tapping the media notification opens the app (session activity -> MainActivity).
+        val openApp = android.app.PendingIntent.getActivity(
+            this,
+            0,
+            packageManager.getLaunchIntentForPackage(packageName)
+                ?: Intent(this, com.sonora.music.MainActivity::class.java),
+            android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+
         player = exo
-        mediaSession = MediaSession.Builder(this, exo).build()
+        mediaSession = MediaSession.Builder(this, exo)
+            .setSessionActivity(openApp)
+            .build()
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession

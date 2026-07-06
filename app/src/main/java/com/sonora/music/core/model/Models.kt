@@ -89,7 +89,8 @@ data class SearchResults(
 /** One synced lyric line; [startMs] < 0 means unsynced/plain line. */
 data class LyricLine(val startMs: Long, val text: String)
 
-data class Lyrics(val lines: List<LyricLine>, val synced: Boolean, val sourceName: String)
+/** [raw] keeps the original LRC/plain text so lyrics can be cached on disk and re-parsed later. */
+data class Lyrics(val lines: List<LyricLine>, val synced: Boolean, val sourceName: String, val raw: String = "")
 
 /** A titled row of tracks for the Home feed (e.g. "Trending", "New releases"). */
 data class HomeSection(val title: String, val tracks: List<Track>)

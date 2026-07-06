@@ -58,6 +58,13 @@ fun SonoraTheme(
     MaterialTheme(
         colorScheme = scheme,
         typography = SonoraTypography,
-        content = content,
-    )
+    ) {
+        // Root Surface so LocalContentColor defaults to onBackground instead of black —
+        // without it, any Text with no explicit color is invisible in dark theme.
+        androidx.compose.material3.Surface(
+            color = scheme.background,
+            contentColor = scheme.onBackground,
+            content = content,
+        )
+    }
 }

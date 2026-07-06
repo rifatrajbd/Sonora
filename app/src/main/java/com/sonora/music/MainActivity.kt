@@ -108,7 +108,6 @@ private fun SonoraRoot(startRoute: String, player: PlayerViewModel = hiltViewMod
     val isDownloading by player.currentIsDownloading.collectAsStateWithLifecycle()
     val hasNext by player.hasNext.collectAsStateWithLifecycle()
     val hasPrevious by player.hasPrevious.collectAsStateWithLifecycle()
-    val positionMs by player.positionMs.collectAsStateWithLifecycle()
     val repeatMode by player.repeatMode.collectAsStateWithLifecycle()
     val sleepEndMs by player.sleepTimerEndMs.collectAsStateWithLifecycle()
     val isOnline by player.isOnline.collectAsStateWithLifecycle()
@@ -264,7 +263,7 @@ private fun SonoraRoot(startRoute: String, player: PlayerViewModel = hiltViewMod
                 isDownloading = isDownloading,
                 hasNext = hasNext,
                 hasPrevious = hasPrevious,
-                positionMs = positionMs,
+                positionFlow = player.positionMs,
                 repeatMode = repeatMode,
                 sleepActive = sleepEndMs != null,
                 queue = queue,

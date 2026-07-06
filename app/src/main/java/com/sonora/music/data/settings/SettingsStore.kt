@@ -37,9 +37,9 @@ data class SonoraSettings(
     val gridBig: Boolean = false,
     val lyricsPosition: LyricsPosition = LyricsPosition.CENTER,
     val squigglySlider: Boolean = false,
-    // Content
-    val contentLanguage: String = "System default",
-    val contentCountry: String = "System default",
+    // Content — ISO codes, or ContentLocales.SYSTEM_DEFAULT to follow the device locale.
+    val contentLanguage: String = ContentLocales.SYSTEM_DEFAULT,
+    val contentCountry: String = ContentLocales.SYSTEM_DEFAULT,
     val hideExplicit: Boolean = false,
     // Player & audio
     val audioQuality: AudioQuality = AudioQuality.LOSSLESS,
@@ -96,8 +96,8 @@ class SettingsStore @Inject constructor(
             gridBig = this[KEY_GRID_BIG] ?: false,
             lyricsPosition = enum(KEY_LYRICS_POS, LyricsPosition.CENTER),
             squigglySlider = this[KEY_SQUIGGLY] ?: false,
-            contentLanguage = this[KEY_LANG] ?: "System default",
-            contentCountry = this[KEY_COUNTRY] ?: "System default",
+            contentLanguage = this[KEY_LANG] ?: ContentLocales.SYSTEM_DEFAULT,
+            contentCountry = this[KEY_COUNTRY] ?: ContentLocales.SYSTEM_DEFAULT,
             hideExplicit = this[KEY_HIDE_EXPLICIT] ?: false,
             audioQuality = enum(KEY_QUALITY, AudioQuality.LOSSLESS),
             persistentQueue = this[KEY_PERSIST_QUEUE] ?: true,
